@@ -1,0 +1,49 @@
+html
+  head
+    title Odds comparison
+    link(href="http://forsmarts.com/style.css" rel="stylesheet" type="text/css")
+  body
+    h1 All matches
+
+- teams = data.matches.teams
+- res1 = data.matches.res1
+- res0 = data.matches.res0
+- res2 = data.matches.res2
+- u25 = data.matches.u25
+- o25 = data.matches.o25
+- n = -1
+
+    for match in teams
+      - n = n+1
+      h3= match
+      table
+        tr
+          th Source
+          th Result 1 
+          th Result 0
+          th Result 2
+          th Under 2.5 
+          th Over 2.5
+        tr
+          td Iddaa
+          td= res1[n]
+          td= res0[n]
+          td= res2[n]
+          td= u25[n]
+          td= o25[n]
+
+        //for r in record
+        //li= record
+          //if match
+          
+            //a(href=`${article.link}` target='_blank')= `${article.title}`
+          //else
+
+            //a(href=`${article.link}` target='_blank')= `${article.link}`
+
+//
+    h3 Latest YouTube Videos
+    ul
+      for video in data.videos
+        li
+          a(href=`https://www.youtube.com/${video.link}` target='_blank')= `${video.title}`
