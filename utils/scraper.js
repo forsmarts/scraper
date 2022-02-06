@@ -50,6 +50,7 @@ const scrapeIddaa = async () => {
 
 const scrapeBetfair = async (q) => {
   const browser = await puppeteer.launch({
+    headless: false,
     args: ['--no-sandbox']
   })
   const page = await browser.newPage()
