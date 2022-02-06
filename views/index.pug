@@ -7,16 +7,23 @@ html
     h1 All matches
 
 - teams = data.iddaa.teams
+- league = data.iddaa.league
+- url = data.iddaa.url
 - res1 = data.iddaa.res1
 - res0 = data.iddaa.res0
 - res2 = data.iddaa.res2
 - u25 = data.iddaa.u25
 - o25 = data.iddaa.o25
+- savedMatches = data.iddaa.savedMatches
 - n = -1
 
     for match in teams
       - n = n+1
-      h3= match
-      div(id = 'data-match-' + n) 
-        input(id = 'input-match-' + n title = 'Enter Betfair URL')
-        button(type="button" id = 'btn-match-' + n onclick="$('#data-match-" + n + "').load('/temp?url='+encodeURIComponent($('#input-match-" + n + "').val()) + '&v1=" + res1[n] + "&v2=" + res0[n] + "&v3=" + res2[n] + "&v4=" + u25[n] + "&v5=" + o25[n] + "')") Scrape
+      h3(title = league[n])= match
+      div(id = 'data-match-' + n)
+        if url[n] == ""
+          input(id = 'input-match-' + n title = 'Enter Betfair URL')
+        else 
+          input(id = 'input-match-' + n title = 'Enter Betfair URL' value = url[n])
+        button(type="button" id = 'btn-match-' + n onclick="$('#data-match-" + n + "').load('/temp?url='+encodeURIComponent($('#input-match-" + n + "').val()) + '&m=" + encodeURIComponent(match) + "&v1=" + res1[n] + "&v2=" + res0[n] + "&v3=" + res2[n] + "&v4=" + u25[n] + "&v5=" + o25[n] + "')") Scrape
+        
