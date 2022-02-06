@@ -36,7 +36,8 @@ h2  {
 h3 {
 	margin: 0px;
 	padding: 0px;
-	margin-top: 20px;
+	margin-top: 10px;
+	margin-bottom: 5px;
 	font-family: Verdana;
 	font-size: 12px;
 	font-style: normal;
@@ -193,31 +194,31 @@ ul#mainlinks a:hover {
 	color: #99FFCC;
 	}
 
-.puzzle {
+.odds {
 	font-family: Verdana, Arial, Helvetica, sans-serif;
 	font-size: 11px;
 	font-weight: bold;
 	color: #000;
 }
 
-table.puzzle {
+table.odds {
 	border: 0px solid #eee;
 	color: #000;
 	background-color: #000;
 }
 
-.puzzle tr {
+.odds tr {
 	background-color: #F7F7F7;
 }
 
-.puzzle th {
+.odds th {
 	padding: 5px;
 	font-weight: bold;
 	text-align: center;
-	background-color: #ff9999;
+	background-color: #99c9ff;
 	}
 
-.puzzle td {
+.odds td {
 	padding: 5px;
 	font-weight: bold;
 	text-align: center;
@@ -246,6 +247,10 @@ table.rating {
 	border: 0px solid #eee;
 	color: #000;
 	background-color: #fff;
+}
+
+td.marked {
+	background-color: rgb(55, 233, 99);
 }
 
 .rating th {
