@@ -1,4 +1,4 @@
-- const odds = data.betfair.odds
+- const odds_results = data.betfair.odds_results
 - const args = data.betfair.arg
 - const iddaa_odds = [args.v1,args.v2,args.v3,args.v4,args.v5]
 
@@ -12,7 +12,7 @@
   each more_odd_value in more_odds
     - order_betfair.push("")
     - n = -1
-    each odd_value in odds
+    each odd_value in odds_results
       - n = n+1
       if odd_value == more_odd_value 
         - order_betfair.pop()
@@ -33,10 +33,10 @@
     - coeff.push("")
     if order_number != ""
       - back_all.pop()
-      - const back_all_value = +odds[order_number].split(" ")[0]
+      - const back_all_value = +odds_results[order_number].split(" ")[0]
       - back_all.push(back_all_value)
       - lay_all.pop()
-      - const lay_all_value = +odds[order_number+1].split(" ")[0]
+      - const lay_all_value = +odds_results[order_number+1].split(" ")[0]
       - lay_all.push(lay_all_value)
       - average.pop()
       - const average_value = +(((back_all_value+lay_all_value)/2).toFixed(3))
@@ -73,7 +73,7 @@ table.odds
     each odd in iddaa
       td= odd
   tr
-    td Coeff
+    td Ratio
     each odd in coeff
       if odd > 0.95
         td.marked= odd

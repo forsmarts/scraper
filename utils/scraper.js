@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer')
+const axios = require('axios')
 const Match = require('../models/matches')
 
 const scrapeIddaa = async () => {
@@ -62,7 +63,7 @@ const scrapeIddaa = async () => {
       })
       m.save()
         .then((result) => {
-          console.log("Saved")
+          //console.log("Saved")
         })
         .catch((err) => {
           console.log(err)
@@ -75,7 +76,7 @@ const scrapeIddaa = async () => {
 
 const scrapeBetfair = async (q) => {
   const browser = await puppeteer.launch({
-    headless: false,
+    //headless: false,
     args: ['--no-sandbox']
   })
   const page = await browser.newPage()
@@ -89,15 +90,77 @@ const scrapeBetfair = async (q) => {
   } catch (err) {
     console.log(err.message)
   }  
-  const odds1 = await page.$$eval('div.main-mv-runners-list-wrapper button span:nth-child(2n-1)', (x) => {
+  const odds_results = await page.$$eval('div.main-mv-runners-list-wrapper button span:nth-child(2n-1)', (x) => {
     return x.map(y => y.textContent)
   })
-  await page.waitForSelector('div.mini-mv table tr td')
-  const odds2 = await page.$$eval('div.mini-mv table tr td', (x) => {
-    return x.map(y => y.textContent.split("\n")[0])
+  const links = await page.$$eval('div.navigation-container li a', (x) => {
+    const href = x.map(y => y.getAttribute("href"))
+    const text = x.map(y => y.textContent)
+    return {href: href, text: text}
   })
+
+  // Getting additional odds through API
+
+  //TODO: more additional odds, now adding more text won't work
+  const additional_odds = ['Under 2.5 Goals', 'Over 2.5 Goals']
+  const additionally_searched_text = ["2.5 Goals"]
+  var MarketIDs = ""
+  var n=-1
+  for (const text of links.text) {
+    n=n+1
+    if (text.indexOf(additionally_searched_text[0]) >= 0) {
+      MarketIDs = MarketIDs + links.href[n].split("/")[2]
+      break
+    }
+  }
+
+  var headers = {
+    headers: {
+      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36',
+      'referer': 'https://www.betfair.com/'  
+    }
+  };
+
+  var odds_goals = []
+  var marketPriceData
+
+  try {
+    marketPriceData = await axios.get(
+      'https://ero.betfair.com/www/sports/exchange/readonly/v1/bymarket?alt=json&marketIds=' + MarketIDs + '&types=EVENT,RUNNER_EXCHANGE_PRICES_BEST,RUNNER_DESCRIPTION',
+      headers
+      )
+  } catch (err) {
+    console.log(err)
+  }
+  
+  var marketPrices = marketPriceData.data.eventTypes[0].eventNodes[0].marketNodes[0].runners
+
+  additional_odds.forEach (additional_odd => {
+    marketPrices.forEach( runner =>{
+      if (additional_odd == runner.description.runnerName) {
+        new_odds = {
+          odd: additional_odd,
+          back: runner.exchange.availableToBack[0].price,
+          lay: runner.exchange.availableToLay[0].price
+        }
+        odds_goals.push(new_odds)
+      }
+    })
+  
+  })
+  odds_goals.forEach (odd => {
+    odds_results.push(odd.odd)
+    odds_results.push(odd.back.toString())
+    odds_results.push(odd.lay.toString())
+  })
+  //await page.waitForSelector('div.mini-mv table tr td')
+  //const odds2 = await page.$$eval('div.mini-mv table tr td', (x) => {
+  //  return x.map(y => y.textContent.split("\n")[0])
+  //})
   await browser.close()
-  const scrapedData = { odds: odds1.concat(odds2), arg: q}
+  //const scrapedData = { odds: odds1.concat(odds2), arg: q}
+  console.log(odds_results)
+  const scrapedData = { odds_results: odds_results, arg: q}
   return scrapedData
 }
 
