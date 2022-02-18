@@ -1,0 +1,20 @@
+var leagues = new Map
+leagues.set('İspanya La Liga 2', 12204313)
+leagues.set('İspanya La Liga', 117)
+leagues.set('Portekiz Premier Lig', 99)
+leagues.set('Fransa Ligue 1', 55)
+leagues.set('Türkiye Süper Lig', 194215)
+leagues.set('İngiltere Championship', 7129730)
+leagues.set('Fransa Ligue 2', 57)
+leagues.set('İtalya Serie A', 81)
+leagues.set('Almanya Bundesliga', 59)
+leagues.set('İngiltere Premier Lig', 10932509)
+leagues.set('UEFA Avrupa Konferans Ligi', 12375833)
+leagues.set('UEFA Avrupa Ligi', 2005)
+leagues.set('UEFA Şampiyonlar Ligi', 228)
+leagues.set('Almanya 2. Bundesliga', 61)
+//leagues.set('', 0)
+//leagues.set('', 0)
+//leagues.set('', 0)
+
+module.exports = leagues

@@ -1,0 +1,30 @@
+- const allOdds = data.allCoefficients.combined_odds
+
+table.odds
+  tr
+    th 
+    each odd in allOdds
+      th= odd.displayName 
+  tr
+    td Back all
+    each odd in allOdds
+      td= odd.betfairBack
+  tr
+    td Lay all
+    each odd in allOdds
+      td= odd.betfairLay
+  tr
+    td Average
+    each odd in allOdds
+      td= odd.betfairAverage
+  tr
+    td Iddaa
+    each odd in allOdds
+      td= odd.iddaaOdd
+  tr
+    td Ratio
+    each odd in allOdds
+      if odd.ratio > 0.95
+        td.marked= odd.ratio
+      else 
+        td= odd.ratio

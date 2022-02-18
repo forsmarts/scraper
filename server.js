@@ -40,8 +40,24 @@ app.get('/temp', (req, res) => {
     .catch(err => res.status(500).send(err))
 })
 
+app.get('/api', (req, res) => {
+  const getCoefficients = new Promise((resolve, reject) => {
+    scraper
+      .scrapeAPI(req.query)
+      .then(data => {
+        resolve(data)
+      })
+      .catch(err => console.log(err))
+  })
+
+  Promise.all([getCoefficients])
+    .then(data => {
+      res.render('index_api', { data: { allCoefficients: data[0] } })
+    })
+    .catch(err => res.status(500).send(err))
+})
+
 const mongoose = require('mongoose');
-const Match = require('./models/matches')
 
 const MongoURI = "mongodb+srv://scraper:ScrapeR1234@cluster0.qbujx.mongodb.net/scraperDB?retryWrites=true&w=majority";
 mongoose.connect(MongoURI,{ useNewUrlParser: true, useUnifiedTopology: true })

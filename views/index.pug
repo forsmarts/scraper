@@ -5,25 +5,13 @@ html
     script(src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous")
   body
     h1 All matches
+    for event in data.iddaa
+      h3(title = event.league)= event.playingTeams
 
-- teams = data.iddaa.teams
-- league = data.iddaa.league
-- url = data.iddaa.url
-- res1 = data.iddaa.res1
-- res0 = data.iddaa.res0
-- res2 = data.iddaa.res2
-- u25 = data.iddaa.u25
-- o25 = data.iddaa.o25
-- savedMatches = data.iddaa.savedMatches
-- n = -1
-
-    for match in teams
-      - n = n+1
-      h3(title = league[n])= match
-      div(id = 'data-match-' + n)
-        if url[n] == ""
-          input(id = 'input-match-' + n title = 'Enter Betfair URL')
-        else 
-          input(id = 'input-match-' + n title = 'Enter Betfair URL' value = url[n])
-        button(type="button" id = 'btn-match-' + n onclick="$('#data-match-" + n + "').load('/temp?url='+encodeURIComponent($('#input-match-" + n + "').val()) + '&m=" + encodeURIComponent(match) + "&v1=" + res1[n] + "&v2=" + res0[n] + "&v3=" + res2[n] + "&v4=" + u25[n] + "&v5=" + o25[n] + "')") Scrape
-        
+      div(id = 'data-match-' + event.eventID)
+      if event.link == ''
+        input(id = 'input-match-' + event.eventID title = 'Enter Betfair ID')
+        button(type="button" id = 'btn-match-' + event.eventID onclick="$('#data-match-" + event.eventID + "').load('/api?id=" + event.eventID + "&bf=' + $('#input-match-" + event.eventID + "').val() + '')") Scrape 
+      else
+        //input(id = 'input-match-' + event.eventID title = 'Enter Betfair ID' value = event.betfairEventID)
+        button(type="button" id = 'btn-match-' + event.eventID onclick="$('#data-match-" + event.eventID + "').load('" + event.link + "')") Scrape 
