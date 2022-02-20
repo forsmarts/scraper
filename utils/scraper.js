@@ -18,11 +18,13 @@ var headersBetfair = {
 }
 
 const marketNames = [
-  { marketName: 'Maç Sonucu', oddNames: ['1', '0', '2'], displayName: ['Result 1', 'Result 0', 'Result 2'] },
-  { marketName: 'Altı/Üstü 1,5', oddNames: ['Alt', 'Üst'], displayName: ['Under 1.5', 'Over 1.5'] },
-  { marketName: 'Altı/Üstü 2,5', oddNames: ['Alt', 'Üst'], displayName: ['Under 2.5', 'Over 2.5'] },
-  { marketName: 'Altı/Üstü 3,5', oddNames: ['Alt', 'Üst'], displayName: ['Under 3.5', 'Over 3.5'] },
-  { marketName: 'Karşılıklı Gol', oddNames: ['Var', 'Yok'], displayName: ['Both score Yes', 'Both score No'] }
+  { marketName: 'Maç Sonucu', oddNames: ['1', '0', '2'], displayName: ['1', '0', '2'] },
+  { marketName: 'Altı/Üstü 0,5', oddNames: ['Alt', 'Üst'], displayName: ['U 0.5', 'O 0.5'] },
+  { marketName: 'Altı/Üstü 1,5', oddNames: ['Alt', 'Üst'], displayName: ['U 1.5', 'O 1.5'] },
+  { marketName: 'Altı/Üstü 2,5', oddNames: ['Alt', 'Üst'], displayName: ['U 2.5', 'O 2.5'] },
+  { marketName: 'Altı/Üstü 3,5', oddNames: ['Alt', 'Üst'], displayName: ['U 3.5', 'O 3.5'] },
+  { marketName: 'Altı/Üstü 4,5', oddNames: ['Alt', 'Üst'], displayName: ['U 4.5', 'O 4.5'] },
+  { marketName: 'Karşılıklı Gol', oddNames: ['Var', 'Yok'], displayName: ['BSY', 'BSN'] }
 ]
 
 async function scrapeIddaa() {
@@ -38,7 +40,7 @@ async function scrapeIddaa() {
       allIddaaEventSPG.forEach(eventSPG => {
         var eventResponses = eventSPG.eventGroup[0].eventResponse
         eventResponses.forEach(eventResponse => {
-            new_event = {
+            var new_event = {
               league: eventResponse.cn,
               leagueId: leagues.get(eventResponse.cn),
               playingTeams: eventResponse.en,
@@ -139,20 +141,24 @@ const scrapeAPI = async (q) => {
       })
       .catch(err => console.log(err))
   
-    const runnerNames = ['Under 1.5 Goals', 'Over 1.5 Goals', 'Under 2.5 Goals', 'Over 2.5 Goals', 'Under 3.5 Goals', 'Over 3.5 Goals', 'Yes', 'No']
-    const marketNamesBF = ['Match Odds', 'Over/Under 1.5 Goals', 'Over/Under 2.5 Goals', 'Over/Under 3.5 Goals', 'Both teams to Score?']
+    const runnerNames = ['Under 0.5 Goals', 'Over 0.5 Goals', 'Under 1.5 Goals', 'Over 1.5 Goals', 'Under 2.5 Goals', 'Over 2.5 Goals', 'Under 3.5 Goals', 'Over 3.5 Goals', 'Under 4.5 Goals', 'Over 4.5 Goals', 'Yes', 'No']
+    const marketNamesBF = ['Match Odds', 'Over/Under 0.5 Goals', 'Over/Under 1.5 Goals', 'Over/Under 2.5 Goals', 'Over/Under 3.5 Goals', 'Over/Under 4.5 Goals', 'Both teams to Score?']
     var displayNames = new Map
-    displayNames.set('Result 1', 'Result 1')
-    displayNames.set('Result 0', 'Result 0')
-    displayNames.set('Result 2', 'Result 2')
-    displayNames.set('Under 1.5 Goals', 'Under 1.5')
-    displayNames.set('Over 1.5 Goals', 'Over 1.5')
-    displayNames.set('Under 2.5 Goals', 'Under 2.5')
-    displayNames.set('Over 2.5 Goals', 'Over 2.5')
-    displayNames.set('Under 3.5 Goals', 'Under 3.5')
-    displayNames.set('Over 3.5 Goals', 'Over 3.5')
-    displayNames.set('Yes', 'Both score Yes')
-    displayNames.set('No', 'Both score No')
+    displayNames.set('Result 1', '1')
+    displayNames.set('Result 0', '0')
+    displayNames.set('Result 2', '2')
+    displayNames.set('Under 0.5 Goals', 'U 0.5')
+    displayNames.set('Over 0.5 Goals', 'O 0.5')
+    displayNames.set('Under 1.5 Goals', 'U 1.5')
+    displayNames.set('Over 1.5 Goals', 'O 1.5')
+    displayNames.set('Under 2.5 Goals', 'U 2.5')
+    displayNames.set('Over 2.5 Goals', 'O 2.5')
+    displayNames.set('Under 3.5 Goals', 'U 3.5')
+    displayNames.set('Over 3.5 Goals', 'O 3.5')
+    displayNames.set('Under 4.5 Goals', 'U 4.5')
+    displayNames.set('Over 4.5 Goals', 'O 4.5')
+    displayNames.set('Yes', 'BSY')
+    displayNames.set('No', 'BSN')
     try {
       marketIDsData = await axios.get(
         'https://ero.betfair.com/www/sports/exchange/readonly/v1/byevent?eventIds=' + q.bf + '&types=MARKET_STATE,EVENT,MARKET_DESCRIPTION',
@@ -168,7 +174,7 @@ const scrapeAPI = async (q) => {
     marketNamesBF.forEach(marketName => {
       marketNodes.forEach(marketNode => {
         if (marketNode.description.marketName == marketName) {
-          new_market = {
+          var new_market = {
             marketName: marketName,
             marketID: marketNode.marketId
           }
@@ -201,13 +207,18 @@ const scrapeAPI = async (q) => {
       marketNode.runners.forEach(runner => {
         runnerNames.forEach(runnerName => {
           if (runnerName == runner.description.runnerName) {
-            new_odds = {
-              odd: runnerName,
-              back: runner.exchange.availableToBack[0].price,
-              lay: runner.exchange.availableToLay[0].price,
-              displayName: displayNames.get(runnerName)
+            try {
+              var new_odds = {
+                odd: runnerName,
+                back: runner.exchange.availableToBack[0].price,
+                lay: runner.exchange.availableToLay[0].price,
+                displayName: displayNames.get(runnerName)
+              }
+              bfOdds.push(new_odds)  
+            } catch {
+              console.log("Problem with: ", eventName)
+              console.log("Error: ", runnerName)
             }
-            bfOdds.push(new_odds)
           }
         })
         for (var key of moreRunners.keys()) {

@@ -3,15 +3,26 @@ html
     title Odds comparison
     link(href="style.css" rel="stylesheet" type="text/css")
     script(src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous")
+    script.
+      function scrapeInput(eventID) {
+        var value = $("#input-match-"+eventID).val();
+        $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+value);
+      }
+      function scrapeLink(eventID,betfairID) {
+        $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID);
+      }
+      function scrapeAll() {
+        $("button.btn-match").click()
+      }
+
   body
-    h1 All matches
+    button(type="button" class= 'scrapeall' onclick="scrapeAll()") Scrape All
     for event in data.iddaa
       h3(title = event.league)= event.playingTeams
-
+      h2= event.date
       div(id = 'data-match-' + event.eventID)
       if event.link == ''
         input(id = 'input-match-' + event.eventID title = 'Enter Betfair ID')
-        button(type="button" id = 'btn-match-' + event.eventID onclick="$('#data-match-" + event.eventID + "').load('/api?id=" + event.eventID + "&bf=' + $('#input-match-" + event.eventID + "').val() + '')") Scrape 
+        button(type="button" class = 'btn-match' onclick="scrapeInput(" + event.eventID + ")") Scrape 
       else
-        //input(id = 'input-match-' + event.eventID title = 'Enter Betfair ID' value = event.betfairEventID)
-        button(type="button" id = 'btn-match-' + event.eventID onclick="$('#data-match-" + event.eventID + "').load('" + event.link + "')") Scrape 
+        button(type="button" class = 'btn-match' onclick="scrapeLink(" + event.eventID + "," + event.betfairEventID + ")") Scrape
