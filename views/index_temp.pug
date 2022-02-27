@@ -1,81 +1,81 @@
-- const odds_results = data.betfair.odds_results
-- const args = data.betfair.arg
-- const iddaa_odds = [args.v1,args.v2,args.v3,args.v4,args.v5]
+//- - const odds_results = data.betfair.odds_results
+//- - const args = data.betfair.arg
+//- - const iddaa_odds = [args.v1,args.v2,args.v3,args.v4,args.v5]
 
-// 
-    Order is 
-    - First team wins
-    - Draw
-    - Second team wins
-- const order_betfair = [2,14,8]
-- const more_odds = ['Under 2.5 Goals', 'Over 2.5 Goals']
-  each more_odd_value in more_odds
-    - order_betfair.push("")
-    - n = -1
-    each odd_value in odds_results
-      - n = n+1
-      if odd_value == more_odd_value 
-        - order_betfair.pop()
-        - order_betfair.push(n+1)
-        - break 
+//- // 
+//-     Order is 
+//-     - First team wins
+//-     - Draw
+//-     - Second team wins
+//- - const order_betfair = [2,14,8]
+//- - const more_odds = ['Under 2.5 Goals', 'Over 2.5 Goals']
+//-   each more_odd_value in more_odds
+//-     - order_betfair.push("")
+//-     - n = -1
+//-     each odd_value in odds_results
+//-       - n = n+1
+//-       if odd_value == more_odd_value 
+//-         - order_betfair.pop()
+//-         - order_betfair.push(n+1)
+//-         - break 
 
-- const back_all = []
-- const lay_all = []
-- const average = []
-- const iddaa = []
-- const coeff = []
+//- - const back_all = []
+//- - const lay_all = []
+//- - const average = []
+//- - const iddaa = []
+//- - const coeff = []
     
-  each order_number in order_betfair
-    - back_all.push("")
-    - lay_all.push("")
-    - average.push("")
-    - iddaa.push("")
-    - coeff.push("")
-    if order_number != ""
-      - back_all.pop()
-      - const back_all_value = +odds_results[order_number].split(" ")[0]
-      - back_all.push(back_all_value)
-      - lay_all.pop()
-      - const lay_all_value = +odds_results[order_number+1].split(" ")[0]
-      - lay_all.push(lay_all_value)
-      - average.pop()
-      - const average_value = +(((back_all_value+lay_all_value)/2).toFixed(3))
-      - average.push(average_value)
-      - iddaa.pop()
-      - const iddaa_value = +iddaa_odds.shift()
-      - iddaa.push(iddaa_value)  
-      - coeff.pop()
-      - const coeff_value = +((iddaa_value/average_value).toFixed(3))
-      - coeff.push(coeff_value)
+//-   each order_number in order_betfair
+//-     - back_all.push("")
+//-     - lay_all.push("")
+//-     - average.push("")
+//-     - iddaa.push("")
+//-     - coeff.push("")
+//-     if order_number != ""
+//-       - back_all.pop()
+//-       - const back_all_value = +odds_results[order_number].split(" ")[0]
+//-       - back_all.push(back_all_value)
+//-       - lay_all.pop()
+//-       - const lay_all_value = +odds_results[order_number+1].split(" ")[0]
+//-       - lay_all.push(lay_all_value)
+//-       - average.pop()
+//-       - const average_value = +(((back_all_value+lay_all_value)/2).toFixed(3))
+//-       - average.push(average_value)
+//-       - iddaa.pop()
+//-       - const iddaa_value = +iddaa_odds.shift()
+//-       - iddaa.push(iddaa_value)  
+//-       - coeff.pop()
+//-       - const coeff_value = +((iddaa_value/average_value).toFixed(3))
+//-       - coeff.push(coeff_value)
 
-table.odds
-  tr
-    th 
-    th Result 1 
-    th Result 0
-    th Result 2
-    th Under 2.5 
-    th Over 2.5
-  tr
-    td Back all
-    each odd in back_all
-      td= odd
-  tr
-    td Lay all
-    each odd in lay_all
-      td= odd
-  tr
-    td Average
-    each odd in average
-      td= odd
-  tr
-    td Iddaa
-    each odd in iddaa
-      td= odd
-  tr
-    td Ratio
-    each odd in coeff
-      if odd > 0.95
-        td.marked= odd
-      else 
-        td= odd
+//- table.odds
+//-   tr
+//-     th 
+//-     th Result 1 
+//-     th Result 0
+//-     th Result 2
+//-     th Under 2.5 
+//-     th Over 2.5
+//-   tr
+//-     td Back all
+//-     each odd in back_all
+//-       td= odd
+//-   tr
+//-     td Lay all
+//-     each odd in lay_all
+//-       td= odd
+//-   tr
+//-     td Average
+//-     each odd in average
+//-       td= odd
+//-   tr
+//-     td Iddaa
+//-     each odd in iddaa
+//-       td= odd
+//-   tr
+//-     td Ratio
+//-     each odd in coeff
+//-       if odd > 0.95
+//-         td.marked= odd
+//-       else 
+//-         td= odd
