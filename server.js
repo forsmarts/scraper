@@ -23,22 +23,22 @@ app.get('/', (req, res) => {
     .catch(err => res.status(500).send(err))
 })
 
-app.get('/temp', (req, res) => {
-  const betfairCoefficients = new Promise((resolve, reject) => {
-    scraper
-      .scrapeBetfair(req.query)
-      .then(data => {
-        resolve(data)
-      })
-      .catch(err => console.log(err))
-  })
+// app.get('/temp', (req, res) => {
+//   const betfairCoefficients = new Promise((resolve, reject) => {
+//     scraper
+//       .scrapeBetfair(req.query)
+//       .then(data => {
+//         resolve(data)
+//       })
+//       .catch(err => console.log(err))
+//   })
 
-  Promise.all([betfairCoefficients])
-    .then(data => {
-      res.render('index_temp', { data: { betfair: data[0] } })
-    })
-    .catch(err => res.status(500).send(err))
-})
+//   Promise.all([betfairCoefficients])
+//     .then(data => {
+//       res.render('index_temp', { data: { betfair: data[0] } })
+//     })
+//     .catch(err => res.status(500).send(err))
+// })
 
 app.get('/api', (req, res) => {
   const getCoefficients = new Promise((resolve, reject) => {

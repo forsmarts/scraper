@@ -1,5 +1,6 @@
 const axios = require('axios')
 const EventID = require('../models/eventIDs')
+const displayNames = require('../models/displayNames')
 const teams = require('../models/teams')
 const leagues = require('../models/leagues')
 
@@ -30,6 +31,7 @@ const marketNames = [
 async function scrapeIddaa() {
   var IddaaEvents = []
   var mentionedLeagues = []
+  // Get all Iddaa events
   await axios
     .get(
       'https://sportprogram.iddaa.com/SportProgram?ProgramType=1&SportId=1&MukList=1_1,2_88,2_100,2_101_2.5,2_89&KingBetType=2',
@@ -46,7 +48,8 @@ async function scrapeIddaa() {
               playingTeams: eventResponse.en,
               eventID: eventResponse.eid,
               date: eventResponse.e,
-              link: ''
+              link: '',
+              bfurl: ''
             }
             if (mentionedLeagues.indexOf(new_event.leagueId) == -1) {
               mentionedLeagues.push(new_event.leagueId)
@@ -56,36 +59,9 @@ async function scrapeIddaa() {
       })
     })
     .catch(err => console.log(err))
-  var allLeagueEvents = []
-  for (mentionedLeague of mentionedLeagues) {
-    await axios
-      .post(
-        'https://scan-inbf.betfair.com/www/sports/navigation/facet/v1/search',
-        { "filter": { "marketBettingTypes": ["ODDS"], "productTypes": ["EXCHANGE"], "marketTypeCodes": ["MATCH_ODDS"], "contentGroup": { "language": "en", "regionCode": "UK" }, "turnInPlayEnabled": true, "maxResults": 0, "selectBy": "FIRST_TO_START_AZ", "competitionIds": [mentionedLeague] }, "facets": [{ "type": "EVENT_TYPE", "skipValues": 0, "maxValues": 10, "next": { "type": "EVENT", "skipValues": 0, "maxValues": 50, "next": { "type": "MARKET", "maxValues": 1, "next": { "type": "COMPETITION", "maxValues": 1 } } } }], "currencyCode": "GBP", "locale": "en_GB" },
-        headersBetfair
-      )
-      .then(res => {
-        var leagueEvents = res.data.attachments.events
-        IddaaEvents.forEach(IddaaEvent => {
-          for (var key in leagueEvents) {
-            if (leagueEvents[key].competitionId == IddaaEvent.leagueId) {
-              var playingTeamsBF = leagueEvents[key].name.split(' v ')
-              if (typeof teams.get(playingTeamsBF[0]) != 'undefined') {
-                playingTeamsBF[0] = teams.get(playingTeamsBF[0])
-              }
-              if (typeof teams.get(playingTeamsBF[1]) != 'undefined') {
-                playingTeamsBF[1] = teams.get(playingTeamsBF[1])
-              }
-              if (IddaaEvent.playingTeams == playingTeamsBF[0] + ' - ' + playingTeamsBF[1]) {
-                IddaaEvent.betfairEventID = leagueEvents[key].eventId
-                IddaaEvent.link='/api?id=' + IddaaEvent.eventID + '&bf=' + leagueEvents[key].eventId
-              }  
-            }
-          }
-        })
-      })
-      .catch(err => console.log(err))
-  }
+    console.log(IddaaEvents)
+//  const oldEvents = await EventID.find({createdAt: {$lte: new Date(Date.now() - 7*24*60*60*1000)}})
+//  console.log(oldEvents)
   const savedMatches = await EventID.find()
   let bFound=false
   IddaaEvents.forEach (IddaaEvent => {
@@ -93,21 +69,62 @@ async function scrapeIddaa() {
     savedMatches.forEach(savedMatch => {
       if (IddaaEvent.eventID == savedMatch.iddaaID) {
         bFound=true
-      if (IddaaEvent.betfairEventID != savedMatch.betfairID) {
+        if (IddaaEvent.betfairEventID != savedMatch.betfairID) {
           IddaaEvent.betfairEventID = savedMatch.betfairID
           IddaaEvent.link = savedMatch.link
         }
+        if (typeof savedMatch.date == 'undefined'){
+          savedMatch.date = IddaaEvent.date
+        }
+        savedMatch.save()
       }
     })
   })
-  const data = IddaaEvents
+    // Get all Betfair maket data
+    var allLeagueEvents = []
+    console.log(mentionedLeagues)
+    for (mentionedLeague of mentionedLeagues) {
+      await axios
+        .post(
+          'https://scan-inbf.betfair.com/www/sports/navigation/facet/v1/search',
+          { "filter": { "marketBettingTypes": ["ODDS"], "productTypes": ["EXCHANGE"], "marketTypeCodes": ["MATCH_ODDS"], "contentGroup": { "language": "en", "regionCode": "UK" }, "turnInPlayEnabled": true, "maxResults": 0, "selectBy": "FIRST_TO_START_AZ", "competitionIds": [mentionedLeague] }, "facets": [{ "type": "EVENT_TYPE", "skipValues": 0, "maxValues": 10, "next": { "type": "EVENT", "skipValues": 0, "maxValues": 50, "next": { "type": "MARKET", "maxValues": 1, "next": { "type": "COMPETITION", "maxValues": 1 } } } }], "currencyCode": "GBP", "locale": "en_GB" },
+          headersBetfair
+        )
+        .then(res => {
+          var leagueEvents = res.data.attachments.events
+          console.log(leagueEvents)
+          IddaaEvents.forEach(IddaaEvent => {
+            for (var key in leagueEvents) {
+              if (leagueEvents[key].competitionId == IddaaEvent.leagueId) {
+                var playingTeamsBF = leagueEvents[key].name.split(' v ')
+                if (typeof teams.get(playingTeamsBF[0]) != 'undefined') {
+                  playingTeamsBF[0] = teams.get(playingTeamsBF[0])
+                }
+                if (typeof teams.get(playingTeamsBF[1]) != 'undefined') {
+                  playingTeamsBF[1] = teams.get(playingTeamsBF[1])
+                }
+                if (IddaaEvent.playingTeams == playingTeamsBF[0] + ' - ' + playingTeamsBF[1] || IddaaEvent.betfairEventID == leagueEvents[key].eventId) {
+                  IddaaEvent.betfairEventID = leagueEvents[key].eventId
+                  IddaaEvent.link = '/api?id=' + IddaaEvent.eventID + '&bf=' + leagueEvents[key].eventId
+                  if (typeof leagues.get(leagueEvents[key].competitionId) != 'undefined') {
+                    IddaaEvent.bfurl = 'https://www.betfair.com/exchange/plus/en/football/' + leagues.get(leagueEvents[key].competitionId) + '/' + leagueEvents[key].name.replaceAll(" ","-").toLowerCase() + '-betting-' + leagueEvents[key].eventId
+                  }
+                } 
+              }
+            }
+          })
+        })
+        .catch(err => console.log(err))
+    }
+    const data = IddaaEvents
   data.forEach(dataPoint => {
     if (typeof dataPoint.leagueId === 'undefined') {
       console.log(dataPoint)
     }
   })
   return data
-}
+
+  }
 
 const scrapeAPI = async (q) => {
   if (q.bf != ''){
@@ -143,22 +160,6 @@ const scrapeAPI = async (q) => {
   
     const runnerNames = ['Under 0.5 Goals', 'Over 0.5 Goals', 'Under 1.5 Goals', 'Over 1.5 Goals', 'Under 2.5 Goals', 'Over 2.5 Goals', 'Under 3.5 Goals', 'Over 3.5 Goals', 'Under 4.5 Goals', 'Over 4.5 Goals', 'Yes', 'No']
     const marketNamesBF = ['Match Odds', 'Over/Under 0.5 Goals', 'Over/Under 1.5 Goals', 'Over/Under 2.5 Goals', 'Over/Under 3.5 Goals', 'Over/Under 4.5 Goals', 'Both teams to Score?']
-    var displayNames = new Map
-    displayNames.set('Result 1', '1')
-    displayNames.set('Result 0', '0')
-    displayNames.set('Result 2', '2')
-    displayNames.set('Under 0.5 Goals', 'U 0.5')
-    displayNames.set('Over 0.5 Goals', 'O 0.5')
-    displayNames.set('Under 1.5 Goals', 'U 1.5')
-    displayNames.set('Over 1.5 Goals', 'O 1.5')
-    displayNames.set('Under 2.5 Goals', 'U 2.5')
-    displayNames.set('Over 2.5 Goals', 'O 2.5')
-    displayNames.set('Under 3.5 Goals', 'U 3.5')
-    displayNames.set('Over 3.5 Goals', 'O 3.5')
-    displayNames.set('Under 4.5 Goals', 'U 4.5')
-    displayNames.set('Over 4.5 Goals', 'O 4.5')
-    displayNames.set('Yes', 'BSY')
-    displayNames.set('No', 'BSN')
     try {
       marketIDsData = await axios.get(
         'https://ero.betfair.com/www/sports/exchange/readonly/v1/byevent?eventIds=' + q.bf + '&types=MARKET_STATE,EVENT,MARKET_DESCRIPTION',
@@ -190,8 +191,9 @@ const scrapeAPI = async (q) => {
     var bfOdds = []
     var marketPriceData
     try {
+      marketPriceURL = 'https://ero.betfair.com/www/sports/exchange/readonly/v1/bymarket?alt=json&marketIds=' + MarketIDs + '&types=EVENT,RUNNER_EXCHANGE_PRICES_BEST,RUNNER_DESCRIPTION'
       marketPriceData = await axios.get(
-        'https://ero.betfair.com/www/sports/exchange/readonly/v1/bymarket?alt=json&marketIds=' + MarketIDs + '&types=EVENT,RUNNER_EXCHANGE_PRICES_BEST,RUNNER_DESCRIPTION',
+        marketPriceURL,
         headersBetfair
       )
     } catch (err) {
@@ -216,8 +218,8 @@ const scrapeAPI = async (q) => {
               }
               bfOdds.push(new_odds)  
             } catch {
-              console.log("Problem with: ", eventName)
-              console.log("Error: ", runnerName)
+              console.log("Problem with: ", eventName, " - ", runnerName)
+              console.log("Error: ", runner.exchange)
             }
           }
         })
@@ -276,6 +278,7 @@ const scrapeAPI = async (q) => {
         if (q.bf != savedEvent.betfairID) {
           savedEvent.betfairID = q.bf
           savedEvent.link = "/api?id=" + q.id + "&bf=" + q.bf
+          savedEvent.playingTeamsBF = eventName
           savedEvent.save()
             .then((result) => {
               console.log("BetfairID is updated for match: ", q.id)

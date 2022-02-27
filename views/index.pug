@@ -19,6 +19,9 @@ html
     button(type="button" class= 'scrapeall' onclick="scrapeAll()") Scrape All
     for event in data.iddaa
       h3(title = event.league)= event.playingTeams
+        if event.bfurl != ''
+          a(href = event.bfurl target = "_blank")
+            img(src="betfair-logo-sm-15.png") 
       h2= event.date
       div(id = 'data-match-' + event.eventID)
       if event.link == ''
