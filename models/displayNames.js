@@ -14,5 +14,6 @@ displayNames.set('Under 4.5 Goals', 'U 4.5')
 displayNames.set('Over 4.5 Goals', 'O 4.5')
 displayNames.set('Yes', 'BSY')
 displayNames.set('No', 'BSN')
+displayNames.set('3 - 3', '3:3')
 
 module.exports = displayNames

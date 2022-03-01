@@ -25,7 +25,8 @@ const marketNames = [
   { marketName: 'Altı/Üstü 2,5', oddNames: ['Alt', 'Üst'], displayName: ['U 2.5', 'O 2.5'] },
   { marketName: 'Altı/Üstü 3,5', oddNames: ['Alt', 'Üst'], displayName: ['U 3.5', 'O 3.5'] },
   { marketName: 'Altı/Üstü 4,5', oddNames: ['Alt', 'Üst'], displayName: ['U 4.5', 'O 4.5'] },
-  { marketName: 'Karşılıklı Gol', oddNames: ['Var', 'Yok'], displayName: ['BSY', 'BSN'] }
+  { marketName: 'Karşılıklı Gol', oddNames: ['Var', 'Yok'], displayName: ['BSY', 'BSN'] },
+  { marketName: 'Maç Skoru', oddNames: ['3:3'], displayName: ['3:3'] }  
 ]
 
 async function scrapeIddaa() {
@@ -158,8 +159,8 @@ const scrapeAPI = async (q) => {
       })
       .catch(err => console.log(err))
   
-    const runnerNames = ['Under 0.5 Goals', 'Over 0.5 Goals', 'Under 1.5 Goals', 'Over 1.5 Goals', 'Under 2.5 Goals', 'Over 2.5 Goals', 'Under 3.5 Goals', 'Over 3.5 Goals', 'Under 4.5 Goals', 'Over 4.5 Goals', 'Yes', 'No']
-    const marketNamesBF = ['Match Odds', 'Over/Under 0.5 Goals', 'Over/Under 1.5 Goals', 'Over/Under 2.5 Goals', 'Over/Under 3.5 Goals', 'Over/Under 4.5 Goals', 'Both teams to Score?']
+    const runnerNames = ['Under 0.5 Goals', 'Over 0.5 Goals', 'Under 1.5 Goals', 'Over 1.5 Goals', 'Under 2.5 Goals', 'Over 2.5 Goals', 'Under 3.5 Goals', 'Over 3.5 Goals', 'Under 4.5 Goals', 'Over 4.5 Goals', 'Yes', 'No', '3 - 3']
+    const marketNamesBF = ['Match Odds', 'Over/Under 0.5 Goals', 'Over/Under 1.5 Goals', 'Over/Under 2.5 Goals', 'Over/Under 3.5 Goals', 'Over/Under 4.5 Goals', 'Both teams to Score?', 'Correct Score']
     try {
       marketIDsData = await axios.get(
         'https://ero.betfair.com/www/sports/exchange/readonly/v1/byevent?eventIds=' + q.bf + '&types=MARKET_STATE,EVENT,MARKET_DESCRIPTION',
