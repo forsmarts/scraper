@@ -8,8 +8,8 @@ html
         var value = $("#input-match-"+eventID).val();
         $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+value);
       }
-      function scrapeLink(eventID,betfairID) {
-        $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID);
+      function scrapeLink(eventID,betfairID,isLive) {
+        $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID+"&isLive="+isLive);
       }
       function scrapeAll() {
         $("button.btn-match").click()
@@ -28,4 +28,4 @@ html
         input(id = 'input-match-' + event.eventID title = 'Enter Betfair ID')
         button(type="button" class = 'btn-match' onclick="scrapeInput(" + event.eventID + ")") Scrape 
       else
-        button(type="button" class = 'btn-match' onclick="scrapeLink(" + event.eventID + "," + event.betfairEventID + ")") Scrape
+        button(type="button" class = 'btn-match' onclick="scrapeLink(" + event.eventID + "," + event.betfairEventID + "," + event.isLive + ")") Scrape

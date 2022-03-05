@@ -1,6 +1,6 @@
 - const allOdds = data.allCoefficients.combined_odds
 
-table.odds
+table(class=allOdds[0].isLive == 'true' ? 'liveodds' : 'odds')
   tr
     th 
     each odd in allOdds

@@ -221,20 +221,20 @@ button.scrapeall {
 	color: #99FFCC;
 	}
 
-.odds {
+.odds,.liveodds{
 	font-family: Verdana, Arial, Helvetica, sans-serif;
 	font-size: 11px;
 	font-weight: bold;
 	color: #000;
 }
 
-table.odds {
+table.odds, table.liveodds{
 	border: 0px solid #eee;
 	color: #000;
 	background-color: #000;
 }
 
-.odds tr {
+.odds tr,.liveodds tr {
 	background-color: #F7F7F7;
 }
 
@@ -245,7 +245,14 @@ table.odds {
 	background-color: #99c9ff;
 	}
 
-.odds td {
+.liveodds th {
+	padding: 5px;
+	font-weight: bold;
+	text-align: center;
+	background-color: #a6d66e;
+}
+	
+.odds td,.liveodds td {
 	padding: 5px;
 	font-weight: bold;
 	text-align: center;

@@ -26,13 +26,41 @@ const marketNames = [
   { marketName: 'Altı/Üstü 3,5', oddNames: ['Alt', 'Üst'], displayName: ['U 3.5', 'O 3.5'] },
   { marketName: 'Altı/Üstü 4,5', oddNames: ['Alt', 'Üst'], displayName: ['U 4.5', 'O 4.5'] },
   { marketName: 'Karşılıklı Gol', oddNames: ['Var', 'Yok'], displayName: ['BSY', 'BSN'] },
-  { marketName: 'Maç Skoru', oddNames: ['3:3'], displayName: ['3:3'] }  
+  { marketName: 'Maç Skoru', oddNames: ['3:3'], displayName: ['3:3'] }
 ]
 
 async function scrapeIddaa() {
   var IddaaEvents = []
   var mentionedLeagues = []
   // Get all Iddaa events
+  await axios
+    .get(
+      'https://sportprogram.iddaa.com/SportProgram?ProgramType=2&SportId=1&MukList=4_4,4_34,4_23,4_14_2.5,4_131&kingBetType=2',
+      headersIddaa
+    )
+    .then(res => {
+      var allLiveIddaaEventSTM = res.data.data.stm
+      allLiveIddaaEventSTM.forEach(liveEventSTM => {
+        var eventResponses = liveEventSTM.eventGroup[0].eventResponse
+        eventResponses.forEach(eventResponse => {
+          var new_event = {
+            league: eventResponse.cn,
+            leagueId: leagues.get(eventResponse.cn),
+            playingTeams: eventResponse.en,
+            eventID: eventResponse.eid,
+            date: eventResponse.e,
+            link: '',
+            bfurl: '',
+            isLive: true
+          }
+          if (mentionedLeagues.indexOf(new_event.leagueId) == -1) {
+            mentionedLeagues.push(new_event.leagueId)
+          }
+          IddaaEvents.push(new_event)
+        })
+      })
+    })
+    .catch(err => console.log(err))
   await axios
     .get(
       'https://sportprogram.iddaa.com/SportProgram?ProgramType=1&SportId=1&MukList=1_1,2_88,2_100,2_101_2.5,2_89&KingBetType=2',
@@ -43,96 +71,97 @@ async function scrapeIddaa() {
       allIddaaEventSPG.forEach(eventSPG => {
         var eventResponses = eventSPG.eventGroup[0].eventResponse
         eventResponses.forEach(eventResponse => {
-            var new_event = {
-              league: eventResponse.cn,
-              leagueId: leagues.get(eventResponse.cn),
-              playingTeams: eventResponse.en,
-              eventID: eventResponse.eid,
-              date: eventResponse.e,
-              link: '',
-              bfurl: ''
-            }
-            if (mentionedLeagues.indexOf(new_event.leagueId) == -1) {
-              mentionedLeagues.push(new_event.leagueId)
-            }
-            IddaaEvents.push(new_event)
+          var new_event = {
+            league: eventResponse.cn,
+            leagueId: leagues.get(eventResponse.cn),
+            playingTeams: eventResponse.en,
+            eventID: eventResponse.eid,
+            date: eventResponse.e,
+            link: '',
+            bfurl: '',
+            isLive: false
+          }
+          if (mentionedLeagues.indexOf(new_event.leagueId) == -1) {
+            mentionedLeagues.push(new_event.leagueId)
+          }
+          IddaaEvents.push(new_event)
         })
       })
     })
     .catch(err => console.log(err))
-    console.log(IddaaEvents)
-//  const oldEvents = await EventID.find({createdAt: {$lte: new Date(Date.now() - 7*24*60*60*1000)}})
-//  console.log(oldEvents)
+
+  //console.log(IddaaEvents)
+  await EventID.deleteMany({ date: { $lte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
   const savedMatches = await EventID.find()
-  let bFound=false
-  IddaaEvents.forEach (IddaaEvent => {
-    bFound=false
+  let bFound = false
+  IddaaEvents.forEach(IddaaEvent => {
+    bFound = false
     savedMatches.forEach(savedMatch => {
       if (IddaaEvent.eventID == savedMatch.iddaaID) {
-        bFound=true
+        bFound = true
         if (IddaaEvent.betfairEventID != savedMatch.betfairID) {
           IddaaEvent.betfairEventID = savedMatch.betfairID
           IddaaEvent.link = savedMatch.link
         }
-        if (typeof savedMatch.date == 'undefined'){
+        if (typeof savedMatch.date == 'undefined') {
           savedMatch.date = IddaaEvent.date
         }
         savedMatch.save()
       }
     })
   })
-    // Get all Betfair maket data
-    var allLeagueEvents = []
-    console.log(mentionedLeagues)
-    for (mentionedLeague of mentionedLeagues) {
-      await axios
-        .post(
-          'https://scan-inbf.betfair.com/www/sports/navigation/facet/v1/search',
-          { "filter": { "marketBettingTypes": ["ODDS"], "productTypes": ["EXCHANGE"], "marketTypeCodes": ["MATCH_ODDS"], "contentGroup": { "language": "en", "regionCode": "UK" }, "turnInPlayEnabled": true, "maxResults": 0, "selectBy": "FIRST_TO_START_AZ", "competitionIds": [mentionedLeague] }, "facets": [{ "type": "EVENT_TYPE", "skipValues": 0, "maxValues": 10, "next": { "type": "EVENT", "skipValues": 0, "maxValues": 50, "next": { "type": "MARKET", "maxValues": 1, "next": { "type": "COMPETITION", "maxValues": 1 } } } }], "currencyCode": "GBP", "locale": "en_GB" },
-          headersBetfair
-        )
-        .then(res => {
-          var leagueEvents = res.data.attachments.events
-          console.log(leagueEvents)
-          IddaaEvents.forEach(IddaaEvent => {
-            for (var key in leagueEvents) {
-              if (leagueEvents[key].competitionId == IddaaEvent.leagueId) {
-                var playingTeamsBF = leagueEvents[key].name.split(' v ')
-                if (typeof teams.get(playingTeamsBF[0]) != 'undefined') {
-                  playingTeamsBF[0] = teams.get(playingTeamsBF[0])
+  // Get all Betfair maket data
+  for (mentionedLeague of mentionedLeagues) {
+    await axios
+      .post(
+        'https://scan-inbf.betfair.com/www/sports/navigation/facet/v1/search',
+        { "filter": { "marketBettingTypes": ["ODDS"], "productTypes": ["EXCHANGE"], "marketTypeCodes": ["MATCH_ODDS"], "contentGroup": { "language": "en", "regionCode": "UK" }, "turnInPlayEnabled": true, "maxResults": 0, "selectBy": "FIRST_TO_START_AZ", "competitionIds": [mentionedLeague] }, "facets": [{ "type": "EVENT_TYPE", "skipValues": 0, "maxValues": 10, "next": { "type": "EVENT", "skipValues": 0, "maxValues": 50, "next": { "type": "MARKET", "maxValues": 1, "next": { "type": "COMPETITION", "maxValues": 1 } } } }], "currencyCode": "GBP", "locale": "en_GB" },
+        headersBetfair
+      )
+      .then(res => {
+        var leagueEvents = res.data.attachments.events
+        //console.log(leagueEvents)
+        IddaaEvents.forEach(IddaaEvent => {
+          for (var key in leagueEvents) {
+            if (leagueEvents[key].competitionId == IddaaEvent.leagueId) {
+              var playingTeamsBF = leagueEvents[key].name.split(' v ')
+              if (typeof teams.get(playingTeamsBF[0]) != 'undefined') {
+                playingTeamsBF[0] = teams.get(playingTeamsBF[0])
+              }
+              if (typeof teams.get(playingTeamsBF[1]) != 'undefined') {
+                playingTeamsBF[1] = teams.get(playingTeamsBF[1])
+              }
+              if (IddaaEvent.playingTeams == playingTeamsBF[0] + ' - ' + playingTeamsBF[1] || IddaaEvent.betfairEventID == leagueEvents[key].eventId) {
+                IddaaEvent.betfairEventID = leagueEvents[key].eventId
+                IddaaEvent.link = '/api?id=' + IddaaEvent.eventID + '&bf=' + leagueEvents[key].eventId
+                if (typeof leagues.get(leagueEvents[key].competitionId) != 'undefined') {
+                  IddaaEvent.bfurl = 'https://www.betfair.com/exchange/plus/en/football/' + leagues.get(leagueEvents[key].competitionId) + '/' + leagueEvents[key].name.replaceAll(" ", "-").toLowerCase() + '-betting-' + leagueEvents[key].eventId
                 }
-                if (typeof teams.get(playingTeamsBF[1]) != 'undefined') {
-                  playingTeamsBF[1] = teams.get(playingTeamsBF[1])
-                }
-                if (IddaaEvent.playingTeams == playingTeamsBF[0] + ' - ' + playingTeamsBF[1] || IddaaEvent.betfairEventID == leagueEvents[key].eventId) {
-                  IddaaEvent.betfairEventID = leagueEvents[key].eventId
-                  IddaaEvent.link = '/api?id=' + IddaaEvent.eventID + '&bf=' + leagueEvents[key].eventId
-                  if (typeof leagues.get(leagueEvents[key].competitionId) != 'undefined') {
-                    IddaaEvent.bfurl = 'https://www.betfair.com/exchange/plus/en/football/' + leagues.get(leagueEvents[key].competitionId) + '/' + leagueEvents[key].name.replaceAll(" ","-").toLowerCase() + '-betting-' + leagueEvents[key].eventId
-                  }
-                } 
               }
             }
-          })
+          }
         })
-        .catch(err => console.log(err))
-    }
-    const data = IddaaEvents
+      })
+      .catch(err => console.log(err))
+  }
+  const data = IddaaEvents
   data.forEach(dataPoint => {
     if (typeof dataPoint.leagueId === 'undefined') {
       console.log(dataPoint)
     }
   })
   return data
-
-  }
+}
 
 const scrapeAPI = async (q) => {
-  if (q.bf != ''){
+  if (q.bf != '') {
     var allOdds = []
+    var nLive = 1
+    if (q.isLive == 'true') { nLive = 2 }
+    var getURL = 'https://sportprogram.iddaa.com/SportProgram/market/' + nLive + '/1/' + q.id
     await axios
       .get(
-        'https://sportprogram.iddaa.com/SportProgram/market/1/1/' + q.id,
+        getURL,
         headersIddaa)
       .then(allOddsForEvent => {
         var allMarkets = allOddsForEvent.data.data.event.m
@@ -158,7 +187,7 @@ const scrapeAPI = async (q) => {
         })
       })
       .catch(err => console.log(err))
-  
+
     const runnerNames = ['Under 0.5 Goals', 'Over 0.5 Goals', 'Under 1.5 Goals', 'Over 1.5 Goals', 'Under 2.5 Goals', 'Over 2.5 Goals', 'Under 3.5 Goals', 'Over 3.5 Goals', 'Under 4.5 Goals', 'Over 4.5 Goals', 'Yes', 'No', '3 - 3']
     const marketNamesBF = ['Match Odds', 'Over/Under 0.5 Goals', 'Over/Under 1.5 Goals', 'Over/Under 2.5 Goals', 'Over/Under 3.5 Goals', 'Over/Under 4.5 Goals', 'Both teams to Score?', 'Correct Score']
     try {
@@ -205,7 +234,7 @@ const scrapeAPI = async (q) => {
     moreRunners.set(playingTeams[0], 'Result 1')
     moreRunners.set('The Draw', 'Result 0')
     moreRunners.set(playingTeams[1], 'Result 2')
-  
+
     marketNodes.forEach(marketNode => {
       marketNode.runners.forEach(runner => {
         runnerNames.forEach(runnerName => {
@@ -217,7 +246,7 @@ const scrapeAPI = async (q) => {
                 lay: runner.exchange.availableToLay[0].price,
                 displayName: displayNames.get(runnerName)
               }
-              bfOdds.push(new_odds)  
+              bfOdds.push(new_odds)
             } catch {
               console.log("Problem with: ", eventName, " - ", runnerName)
               console.log("Error: ", runner.exchange)
@@ -260,12 +289,13 @@ const scrapeAPI = async (q) => {
       })
       if (nPresented == 2) {
         var combined_record = {
+          isLive: q.isLive,
           displayName: displayNames.get(key),
           iddaaOdd: allOdds[iddaaIndex].odd,
           betfairBack: bfOdds[bfIndex].back,
           betfairLay: bfOdds[bfIndex].lay,
-          betfairAverage: Math.floor(1000*((bfOdds[bfIndex].back + bfOdds[bfIndex].lay)/2))/1000,
-          ratio: Math.floor(1000*(allOdds[iddaaIndex].odd/((bfOdds[bfIndex].back + bfOdds[bfIndex].lay)/2)))/1000
+          betfairAverage: Math.floor(1000 * ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2)) / 1000,
+          ratio: Math.floor(1000 * (allOdds[iddaaIndex].odd / ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2))) / 1000
         }
         combined_odds.push(combined_record)
       }
@@ -291,21 +321,21 @@ const scrapeAPI = async (q) => {
         return
       }
     })
-      if (!bFound) {
-        const m = new EventID({
-          iddaaID: q.id,
-          betfairID: q.bf,
-          link: "/api?id=" + q.id + "&bf=" + q.bf
+    if (!bFound) {
+      const m = new EventID({
+        iddaaID: q.id,
+        betfairID: q.bf,
+        link: "/api?id=" + q.id + "&bf=" + q.bf
+      })
+      m.save()
+        .then((result) => {
+          console.log("New record created for match: ", q.id)
         })
-        m.save()
-          .then((result) => {
-            console.log("New record created for match: ", q.id)
-          })
-          .catch((err) => {
-            console.log("New record creation failed: ", err)
-          })  
-      }
-    return scrapedData  
+        .catch((err) => {
+          console.log("New record creation failed: ", err)
+        })
+    }
+    return scrapedData
   } else {
     return
   }
