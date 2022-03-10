@@ -337,7 +337,7 @@ const scrapeAPI = async (q) => {
     }
     return scrapedData
   } else {
-    return
+    return {combined_odds: ''}
   }
 }
 

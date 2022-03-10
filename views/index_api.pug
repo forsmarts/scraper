@@ -1,30 +1,30 @@
 - const allOdds = data.allCoefficients.combined_odds
-
-table(class=allOdds[0].isLive == 'true' ? 'liveodds' : 'odds')
-  tr
-    th 
-    each odd in allOdds
-      th= odd.displayName 
-  tr
-    td B
-    each odd in allOdds
-      td= odd.betfairBack
-  tr
-    td L
-    each odd in allOdds
-      td= odd.betfairLay
-  tr
-    td A
-    each odd in allOdds
-      td= odd.betfairAverage
-  tr
-    td I
-    each odd in allOdds
-      td= odd.iddaaOdd
-  tr
-    td R
-    each odd in allOdds
-      if odd.ratio > 0.95
-        td.marked= odd.ratio
-      else 
-        td= odd.ratio
+if allOdds != ''
+  table(class=allOdds[0].isLive == 'true' ? 'liveodds' : 'odds')
+    tr
+      th 
+      each odd in allOdds
+        th= odd.displayName 
+    tr
+      td B
+      each odd in allOdds
+        td= odd.betfairBack
+    tr
+      td L
+      each odd in allOdds
+        td= odd.betfairLay
+    tr
+      td A
+      each odd in allOdds
+        td= odd.betfairAverage
+    tr
+      td I
+      each odd in allOdds
+        td= odd.iddaaOdd
+    tr
+      td R
+      each odd in allOdds
+        if odd.ratio > 0.95
+          td.marked= odd.ratio
+        else 
+          td= odd.ratio
