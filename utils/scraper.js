@@ -4,6 +4,8 @@ const displayNames = require('../models/displayNames')
 const teams = require('../models/teams')
 const leagues = require('../models/leagues')
 
+const leagueToCheck = 11591693
+
 var headersIddaa = {
   headers: {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36',
@@ -131,11 +133,22 @@ async function scrapeIddaa() {
               if (typeof teams.get(playingTeamsBF[1]) != 'undefined') {
                 playingTeamsBF[1] = teams.get(playingTeamsBF[1])
               }
+              if (mentionedLeague == leagueToCheck) {
+                console.log("Iddaa: ", IddaaEvent.playingTeams)
+                console.log("Betfair: ", playingTeamsBF[0] + ' - ' + playingTeamsBF[1])  
+              }
               if (IddaaEvent.playingTeams == playingTeamsBF[0] + ' - ' + playingTeamsBF[1] || IddaaEvent.betfairEventID == leagueEvents[key].eventId) {
+                if (mentionedLeague == leagueToCheck) {
+                  console.log("SUCCESS")
+                }
                 IddaaEvent.betfairEventID = leagueEvents[key].eventId
                 IddaaEvent.link = '/api?id=' + IddaaEvent.eventID + '&bf=' + leagueEvents[key].eventId
                 if (typeof leagues.get(leagueEvents[key].competitionId) != 'undefined') {
                   IddaaEvent.bfurl = 'https://www.betfair.com/exchange/plus/en/football/' + leagues.get(leagueEvents[key].competitionId) + '/' + leagueEvents[key].name.replaceAll(" ", "-").toLowerCase() + '-betting-' + leagueEvents[key].eventId
+                }
+              } else {
+                if (mentionedLeague == leagueToCheck) {
+                  console.log("No match")
                 }
               }
             }
@@ -147,7 +160,7 @@ async function scrapeIddaa() {
   const data = IddaaEvents
   data.forEach(dataPoint => {
     if (typeof dataPoint.leagueId === 'undefined') {
-      console.log(dataPoint)
+      //console.log(dataPoint.league)
     }
   })
   return data
@@ -312,7 +325,7 @@ const scrapeAPI = async (q) => {
           savedEvent.playingTeamsBF = eventName
           savedEvent.save()
             .then((result) => {
-              console.log("BetfairID is updated for match: ", q.id)
+              //console.log("BetfairID is updated for match: ", q.id)
             })
             .catch((err) => {
               console.log("BetfairID update failed: ", err)
@@ -329,7 +342,7 @@ const scrapeAPI = async (q) => {
       })
       m.save()
         .then((result) => {
-          console.log("New record created for match: ", q.id)
+          //console.log("New record created for match: ", q.id)
         })
         .catch((err) => {
           console.log("New record creation failed: ", err)
