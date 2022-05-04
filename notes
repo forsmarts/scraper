@@ -1,3 +1,6 @@
+----------
+Heroku CLI
+----------
 Login to Heroku CLI
 > heroku login
 Merge the branch to the main
@@ -7,3 +10,13 @@ Set git remote heroku to https://git.heroku.com/forsmartswebscraper.git
 > heroku git:remote -a forsmartswebscraper
 Deploy the application
 > git push heroku main
+----------
+Mongo DB
+----------
+Link to MongoDB host
+> https://cloud.mongodb.com/
+
+      function startScraping() {
+        $("#filter").hide();
+        $("#main").load("/main");
+      }

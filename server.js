@@ -6,10 +6,27 @@ const app = express()
 app.use(express.static('css'))
 app.set('view engine', 'pug')
 
-app.get('/', (req, res) => {
+// app.get('/', (req, res) => {
+//   const filters = new Promise((resolve, reject) => {
+//     scraper
+//       .loadFilters()
+//       .then(data => {
+//         resolve(data)
+//       })
+//       .catch(err => console.log(err))
+//   })
+
+//   Promise.all([filters])
+//     .then(data => {
+//       res.render('index', { data: { filters: data[0] }})
+//     })
+//     .catch(err => res.status(500).send(err))
+// })
+
+app.get(['/','/main'], (req, res) => {
   const iddaaCoefficients = new Promise((resolve, reject) => {
     scraper
-      .scrapeIddaa()
+      .scrapeIddaa(req.query)
       .then(data => {
         resolve(data)
       })
@@ -18,27 +35,10 @@ app.get('/', (req, res) => {
 
   Promise.all([iddaaCoefficients])
     .then(data => {
-      res.render('index', { data: { iddaa: data[0] } })
+      res.render('index_main', { data: { iddaa: data[0] } })
     })
     .catch(err => res.status(500).send(err))
 })
-
-// app.get('/temp', (req, res) => {
-//   const betfairCoefficients = new Promise((resolve, reject) => {
-//     scraper
-//       .scrapeBetfair(req.query)
-//       .then(data => {
-//         resolve(data)
-//       })
-//       .catch(err => console.log(err))
-//   })
-
-//   Promise.all([betfairCoefficients])
-//     .then(data => {
-//       res.render('index_temp', { data: { betfair: data[0] } })
-//     })
-//     .catch(err => res.status(500).send(err))
-// })
 
 app.get('/api', (req, res) => {
   const getCoefficients = new Promise((resolve, reject) => {
@@ -53,6 +53,23 @@ app.get('/api', (req, res) => {
   Promise.all([getCoefficients])
     .then(data => {
       res.render('index_api', { data: { allCoefficients: data[0] } })
+    })
+    .catch(err => res.status(500).send(err))
+})
+
+app.get('/delete', (req, res) => {
+  const deleteFromMongoDB = new Promise((resolve, reject) => {
+    scraper
+      .deleteFromMongoDB(req.query)
+      .then(data => {
+        resolve(data)
+      })
+      .catch(err => console.log(err))
+  })
+
+  Promise.all([deleteFromMongoDB])
+    .then(data => {
+      res.render('index_scrape_input', { data: { id: data }})
     })
     .catch(err => res.status(500).send(err))
 })

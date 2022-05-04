@@ -8,6 +8,7 @@ const eventIDSchema = new mongoose.Schema ({
     betfairID: Number,
     leagueId: Number,
     playingTeamsBF: String,
+    mappedAutomatically: Boolean,
     date: Date,
     link: String
 }, {timestamps: true})
