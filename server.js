@@ -6,24 +6,24 @@ const app = express()
 app.use(express.static('css'))
 app.set('view engine', 'pug')
 
-// app.get('/', (req, res) => {
-//   const filters = new Promise((resolve, reject) => {
-//     scraper
-//       .loadFilters()
-//       .then(data => {
-//         resolve(data)
-//       })
-//       .catch(err => console.log(err))
-//   })
+app.get('/', (req, res) => {
+  const filters = new Promise((resolve, reject) => {
+    scraper
+      .loadFilters()
+      .then(data => {
+        resolve(data)
+      })
+      .catch(err => console.log(err))
+  })
 
-//   Promise.all([filters])
-//     .then(data => {
-//       res.render('index', { data: { filters: data[0] }})
-//     })
-//     .catch(err => res.status(500).send(err))
-// })
+  Promise.all([filters])
+    .then(data => {
+      res.render('index', { data: { filters: data[0] }})
+    })
+    .catch(err => res.status(500).send(err))
+})
 
-app.get(['/','/main'], (req, res) => {
+app.get(['/main'], (req, res) => {
   const iddaaCoefficients = new Promise((resolve, reject) => {
     scraper
       .scrapeIddaa(req.query)

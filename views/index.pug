@@ -5,13 +5,21 @@ html
     script(src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous")
     script.
       function showMatches(league) {
-        if ($("#btn-league"+league).attr('class')=='btn-league-not-selected') {
+        if ($("#btn-league-"+league).attr('class')=='btn-league-not-selected') {
           $("#div-league-"+league).show()
-          $("#div-league-"+league).load("/main?league="+league)
-          $("#btn-league"+league).attr('class', 'btn-league-selected')
+          const dates = 'all'
+          $("#div-league-"+league).load("/main?leagueId="+league+"&dates="+dates)
+          $("#btn-league-"+league).attr('class', 'btn-league-selected')
         } else {
           $("#div-league-"+league).hide()
-          $("#btn-league"+league).attr('class', 'btn-league-not-selected')
+          $("#btn-league-"+league).attr('class', 'btn-league-not-selected')
+        }
+      }
+      function filterDates(date) {
+        if ($("#btn-date-"+date).attr('class')=='btn-date-not-selected') {
+          $("#btn-date-"+date).attr('class', 'btn-date-selected')
+        } else {
+          $("#btn-date-"+date).attr('class', 'btn-date-not-selected')
         }
       }
 
@@ -20,8 +28,12 @@ html
     div(id='filter')
       h1 Leagues
       div(id='buttons-leagues')
-        for league in data.filters.leagueNames
-          button(type="button" id='btn-league'+league class = 'btn-league-not-selected' onclick="showMatches('"+league+"')")= league
-      div(id='div-leagues')
-        for league in data.filters.leagueNames
-          div(id="div-league-"+league)
+        for league in data.filters.mentionedLeagues
+          button(type="button" id='btn-league-'+league.leagueId class = 'btn-league-not-selected' onclick="showMatches("+league.leagueId+")")= league.leagueName + " (" + league.count + ")"
+      //div(id='buttons-dates')
+        for date in data.filters.mentionedDates
+          button(type="button" id='btn-date-'+date class = 'btn-date-selected' onclick="filterDates('"+date+"')")= date
+
+    div(id='div-leagues')
+      for league in data.filters.mentionedLeagues
+        div(id="div-league-"+league.leagueId)
