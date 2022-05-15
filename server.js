@@ -57,6 +57,23 @@ app.get('/api', (req, res) => {
     .catch(err => res.status(500).send(err))
 })
 
+app.get('/summary', (req, res) => {
+  const getSummary = new Promise((resolve, reject) => {
+    scraper
+      .getSummary()
+      .then(data => {
+        resolve(data)
+      })
+      .catch(err => console.log(err))
+  })
+
+  Promise.all([getSummary])
+    .then(data => {
+      res.render('index_summary', { data: { summary: data[0] } })
+    })
+    .catch(err => res.status(500).send(err))
+})
+
 app.get('/delete', (req, res) => {
   const deleteFromMongoDB = new Promise((resolve, reject) => {
     scraper

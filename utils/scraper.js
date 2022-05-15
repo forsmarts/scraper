@@ -3,6 +3,7 @@ const EventID = require('../models/eventIDs')
 const displayNames = require('../models/displayNames')
 const teams = require('../models/teams')
 const leagues = require('../models/leagues')
+var summaryGreens = []
 
 var headersIddaa = {
   headers: {
@@ -57,6 +58,7 @@ async function scrapeIddaa() {
               playingTeams: eventResponse.en,
               eventID: eventResponse.eid,
               date: eventResponse.e,
+              mbs: eventResponse.mb,
               link: '',
               bfurl: '',
               isLive: true
@@ -86,6 +88,7 @@ async function scrapeIddaa() {
               playingTeams: eventResponse.en,
               eventID: eventResponse.eid,
               date: eventResponse.e,
+              mbs: eventResponse.mb,
               link: '',
               bfurl: '',
               isLive: false
@@ -161,13 +164,16 @@ const scrapeAPI = async (q) => {
   if (q.bf != '') {
     var allOdds = []
     var nLive = 1
+    var liveId
+    var getURL
     if (q.isLive == 'true') { nLive = 2 }
-    var getURL = 'https://sportprogram.iddaa.com/SportProgram/market/' + nLive + '/1/' + q.id
+    getURL = 'https://sportprogram.iddaa.com/SportProgram/market/' + nLive + '/1/' + q.id
     await axios
       .get(
         getURL,
         headersIddaa)
       .then(allOddsForEvent => {
+        liveId = allOddsForEvent.data.data.event.bid
         var allMarkets = allOddsForEvent.data.data.event.m
         allMarkets.forEach(market => {
           marketNames.forEach(marketName => {
@@ -177,12 +183,14 @@ const scrapeAPI = async (q) => {
                 marketName.oddNames.forEach(oddName => {
                   n = n + 1
                   if (oddName == odd.ona) {
-                    allOdds.push({
-                      marketName: marketName.marketName,
-                      oddName: odd.ona,
-                      displayName: marketName.displayName[n],
-                      odd: odd.odd
-                    })
+                    if (odd.odd > 1) {
+                      allOdds.push({
+                        marketName: marketName.marketName,
+                        oddName: odd.ona,
+                        displayName: marketName.displayName[n],
+                        odd: odd.odd
+                      })  
+                    }
                   }
                 })
               })
@@ -191,7 +199,36 @@ const scrapeAPI = async (q) => {
         })
       })
       .catch(err => console.log(err))
-
+    var matchTime = ""
+    var matchResult = ""
+    if (q.isLive == 'true') {
+      getURL = 'https://lmt.fn.sportradar.com/common/tr/Etc:UTC/gismo/match_timelinedelta/' + liveId
+      await axios
+        .get(
+          getURL,
+          headersIddaa)
+        .then(matchSituation => {
+          var matchData = matchSituation.data.doc[0].data
+          //var thisSituation = matchData[matchData.length-1]
+          //var minute = thisSituation.time.toString() + "'"
+          //var injurytime = thisSituation.injurytime
+          var thisResult = matchData.match.result
+          //console.log(thisResult)
+          matchResult = thisResult.home.toString() + ":" + thisResult.away.toString()
+          var thisSituation = matchData.events.find((event) => {
+            return event.type === "matchsituation"
+          } )
+          //console.log(thisSituation)
+          var minute = thisSituation.time.toString() + "'"
+          var injurytime = thisSituation.injurytime
+          matchTime = minute.toString()
+          if (injurytime > 0) {
+            matchTime = matchTime + " + " + injurytime.toString() + "'"
+          }
+        })
+        .catch(err => console.log(err))
+      }
+    
     const runnerNames = ['Under 0.5 Goals', 'Over 0.5 Goals', 'Under 1.5 Goals', 'Over 1.5 Goals', 'Under 2.5 Goals', 'Over 2.5 Goals', 'Under 3.5 Goals', 'Over 3.5 Goals', 'Under 4.5 Goals', 'Over 4.5 Goals', 'Yes', 'No', '3 - 3']
     const marketNamesBF = ['Match Odds', 'Over/Under 0.5 Goals', 'Over/Under 1.5 Goals', 'Over/Under 2.5 Goals', 'Over/Under 3.5 Goals', 'Over/Under 4.5 Goals', 'Both teams to Score?', 'Correct Score']
     try {
@@ -249,28 +286,47 @@ const scrapeAPI = async (q) => {
         runnerNames.forEach(runnerName => {
           if (runnerName == runner.description.runnerName) {
             try {
-              var new_odds = {
-                odd: runnerName,
-                back: runner.exchange.availableToBack[0].price,
-                lay: runner.exchange.availableToLay[0].price,
-                displayName: displayNames.get(runnerName)
+              var ratio = runner.exchange.availableToBack[0].price / runner.exchange.availableToLay[0].price
+              var thresholdRatio = 0.9
+              // console.log(runnerName)
+              // console.log(ratio)
+              // console.log(thresholdRatio)
+              if (runnerName == '3 - 3') {
+                thresholdRatio = 0.75
               }
-              bfOdds.push(new_odds)
+              if (ratio > thresholdRatio) {
+                new_odds = {
+                  odd: runnerName,
+                  back: runner.exchange.availableToBack[0].price,
+                  lay: runner.exchange.availableToLay[0].price,
+                  displayName: displayNames.get(runnerName)
+                }
+                bfOdds.push(new_odds)  
+              }
             } catch {
               console.log("Problem with: ", eventName, " - ", runnerName)
-              console.log("Error: ", runner.exchange)
+              //console.log("Error: ", runner.exchange)
             }
           }
         })
         for (var key of moreRunners.keys()) {
           if (key === runner.description.runnerName) {
-            new_odds = {
-              odd: moreRunners.get(key),
-              back: runner.exchange.availableToBack[0].price,
-              lay: runner.exchange.availableToLay[0].price,
-              displayName: displayNames.get(moreRunners.get(key))
+            try {
+              var ratio = runner.exchange.availableToBack[0].price / runner.exchange.availableToLay[0].price
+              var thresholdRatio = 0.9
+              if (ratio > thresholdRatio) {
+                new_odds = {
+                  odd: moreRunners.get(key),
+                  back: runner.exchange.availableToBack[0].price,
+                  lay: runner.exchange.availableToLay[0].price,
+                  displayName: displayNames.get(moreRunners.get(key))
+                }
+                bfOdds.push(new_odds)
+              }
+            } catch {
+              console.log("Problem with: ", eventName, " - ", moreRunners.get(key))
+              //console.log("Error: ", runner.exchange)
             }
-            bfOdds.push(new_odds)
           }
         }
       })
@@ -298,7 +354,7 @@ const scrapeAPI = async (q) => {
       })
       if (nPresented == 2) {
         var combined_record = {
-          isLive: q.isLive,
+          playingTeams: eventName,
           displayName: displayNames.get(key),
           iddaaOdd: allOdds[iddaaIndex].odd,
           betfairBack: bfOdds[bfIndex].back,
@@ -307,9 +363,12 @@ const scrapeAPI = async (q) => {
           ratio: Math.floor(1000 * (allOdds[iddaaIndex].odd / ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2))) / 1000
         }
         combined_odds.push(combined_record)
+        if (combined_record.ratio > 0.95) {
+          summaryGreens.push(combined_record)
+        }
       }
     }
-    const scrapedData = { combined_odds: combined_odds }
+    const scrapedData = { isLive: q.isLive, matchResult: matchResult, matchTime: matchTime, combined_odds: combined_odds }
     const savedEvents = await EventID.find()
     let bFound = false
     savedEvents.forEach(savedEvent => {
@@ -350,6 +409,12 @@ const scrapeAPI = async (q) => {
   }
 }
 
+function getSummary() {
+  console.log(summaryGreens)
+  return summaryGreens
+}
+
 module.exports.scrapeIddaa = scrapeIddaa
 module.exports.scrapeAPI = scrapeAPI
 module.exports.deleteFromMongoDB = deleteFromMongoDB
+module.exports.getSummary = getSummary

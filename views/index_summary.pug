@@ -1,11 +1,7 @@
-- const allOdds = data.allCoefficients.combined_odds
-- const matchResult = data.allCoefficients.matchResult
-- const matchTime = data.allCoefficients.matchTime
-- const isLive = data.allCoefficients.isLive
-if allOdds != ''
-  if matchTime != ''
-    h2 Score: #{matchResult} Time: #{matchTime} 
-  table(class=isLive == 'true' ? 'liveodds' : 'odds')
+- const allOdds = data.summary
+
+h3 Summary section
+  table(class='odds')
     tr
       th 
       each odd in allOdds
