@@ -15,8 +15,15 @@ Mongo DB
 ----------
 Link to MongoDB host
 > https://cloud.mongodb.com/
-
-      function startScraping() {
-        $("#filter").hide();
-        $("#main").load("/main");
-      }
+----------
+Priorities from 5/9/2022
+----------
+1. Improve green's validity
+- when I value is "1" , no need to mark the result as green
+- B/L should be smaller then 0,90 (If you can add different rule, for 3-3 this ratio can be 0,75)
+2. Summary page
+- List all validated greens on top of the page after scraping
+3. Add more info for live events
+- it should also have current score and the minute of the match
+4. Redo teams/leagues mapping
+- Create an admin page for operator to be able to add/delete teams'/leagues' aliases
