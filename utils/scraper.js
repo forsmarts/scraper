@@ -303,7 +303,7 @@ const scrapeAPI = async (q) => {
               }
               if (ratio <= thresholdRatio) {
                 new_odds.isValid = false
-                console.log(new_odds)
+                //console.log(new_odds)
               }
               bfOdds.push(new_odds)  
             } catch {
@@ -326,10 +326,10 @@ const scrapeAPI = async (q) => {
               }
               if (ratio <= thresholdRatio) {
                 new_odds.isValid = false
-                console.log(new_odds)
+                //console.log(new_odds)
               }
               bfOdds.push(new_odds)            
-              console.log(new_odds)
+              //console.log(new_odds)
             } catch {
               console.log("Problem with: ", eventName, " - ", moreRunners.get(key))
               //console.log("Error: ", runner.exchange)
