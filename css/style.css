@@ -205,13 +205,13 @@ button.scrapeall {
 	font-size: 14px;
 }
 
-.btn-league-not-selected, .btn-date-not-selected {
+.btn-league-not-selected {
 	background-color: #c3a4d7;
 	padding: 2px 10px;
 	font-size: 11px;
 }
 	
-.btn-league-selected, .btn-date-selected {
+.btn-league-selected {
 	background-color: #acd7a4;
 	padding: 2px 10px;
 	font-size: 11px;
