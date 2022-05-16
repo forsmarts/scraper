@@ -294,7 +294,7 @@ const scrapeAPI = async (q) => {
               if (runnerName == '3 - 3') {
                 thresholdRatio = 0.75
               }
-              new_odds = {
+              var new_odds = {
                 odd: runnerName,
                 back: runner.exchange.availableToBack[0].price,
                 lay: runner.exchange.availableToLay[0].price,
@@ -317,7 +317,7 @@ const scrapeAPI = async (q) => {
             try {
               var ratio = runner.exchange.availableToBack[0].price / runner.exchange.availableToLay[0].price
               var thresholdRatio = 0.9
-              new_odds = {
+              var new_odds = {
                 odd: moreRunners.get(key),
                 back: runner.exchange.availableToBack[0].price,
                 lay: runner.exchange.availableToLay[0].price,
