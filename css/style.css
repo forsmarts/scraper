@@ -300,6 +300,10 @@ td.marked {
 	background-color: rgb(55, 233, 99);
 }
 
+td.invalid {
+	background-color: rgb(227, 155, 123);
+}
+
 .rating th {
 	padding: 3px;
 	font-weight: bold;

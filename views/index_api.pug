@@ -13,23 +13,38 @@ if allOdds != ''
     tr
       td B
       each odd in allOdds
-        td= odd.betfairBack
+        if !odd.isValid
+          td.invalid= odd.betfairBack
+        else 
+          td= odd.betfairBack
     tr
       td L
       each odd in allOdds
-        td= odd.betfairLay
+        if !odd.isValid
+          td.invalid= odd.betfairLay
+        else 
+          td= odd.betfairLay
     tr
       td A
       each odd in allOdds
-        td= odd.betfairAverage
+        if !odd.isValid
+          td.invalid= odd.betfairAverage
+        else 
+          td= odd.betfairAverage
     tr
       td I
       each odd in allOdds
-        td= odd.iddaaOdd
+        if !odd.isValid
+          td.invalid= odd.iddaaOdd
+        else 
+          td= odd.iddaaOdd
     tr
       td R
       each odd in allOdds
-        if odd.ratio > 0.95
-          td.marked= odd.ratio
-        else 
-          td= odd.ratio
+        if !odd.isValid
+          td.invalid= odd.ratio
+        else
+          if odd.ratio > 0.95
+            td.marked= odd.ratio
+          else 
+            td= odd.ratio

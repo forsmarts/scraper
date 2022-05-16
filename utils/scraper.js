@@ -294,15 +294,18 @@ const scrapeAPI = async (q) => {
               if (runnerName == '3 - 3') {
                 thresholdRatio = 0.75
               }
-              if (ratio > thresholdRatio) {
-                new_odds = {
-                  odd: runnerName,
-                  back: runner.exchange.availableToBack[0].price,
-                  lay: runner.exchange.availableToLay[0].price,
-                  displayName: displayNames.get(runnerName)
-                }
-                bfOdds.push(new_odds)  
+              new_odds = {
+                odd: runnerName,
+                back: runner.exchange.availableToBack[0].price,
+                lay: runner.exchange.availableToLay[0].price,
+                displayName: displayNames.get(runnerName),
+                isValid: true
               }
+              if (ratio <= thresholdRatio) {
+                new_odds.isValid = false
+                console.log(new_odds)
+              }
+              bfOdds.push(new_odds)  
             } catch {
               console.log("Problem with: ", eventName, " - ", runnerName)
               //console.log("Error: ", runner.exchange)
@@ -314,15 +317,19 @@ const scrapeAPI = async (q) => {
             try {
               var ratio = runner.exchange.availableToBack[0].price / runner.exchange.availableToLay[0].price
               var thresholdRatio = 0.9
-              if (ratio > thresholdRatio) {
-                new_odds = {
-                  odd: moreRunners.get(key),
-                  back: runner.exchange.availableToBack[0].price,
-                  lay: runner.exchange.availableToLay[0].price,
-                  displayName: displayNames.get(moreRunners.get(key))
-                }
-                bfOdds.push(new_odds)
+              new_odds = {
+                odd: moreRunners.get(key),
+                back: runner.exchange.availableToBack[0].price,
+                lay: runner.exchange.availableToLay[0].price,
+                displayName: displayNames.get(moreRunners.get(key)),
+                isValid: true
               }
+              if (ratio <= thresholdRatio) {
+                new_odds.isValid = false
+                console.log(new_odds)
+              }
+              bfOdds.push(new_odds)            
+              console.log(new_odds)
             } catch {
               console.log("Problem with: ", eventName, " - ", moreRunners.get(key))
               //console.log("Error: ", runner.exchange)
@@ -360,7 +367,8 @@ const scrapeAPI = async (q) => {
           betfairBack: bfOdds[bfIndex].back,
           betfairLay: bfOdds[bfIndex].lay,
           betfairAverage: Math.floor(1000 * ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2)) / 1000,
-          ratio: Math.floor(1000 * (allOdds[iddaaIndex].odd / ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2))) / 1000
+          ratio: Math.floor(1000 * (allOdds[iddaaIndex].odd / ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2))) / 1000,
+          isValid: bfOdds[bfIndex].isValid
         }
         combined_odds.push(combined_record)
         if (combined_record.ratio > 0.95) {
