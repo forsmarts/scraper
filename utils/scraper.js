@@ -4,6 +4,9 @@ const displayNames = require('../models/displayNames')
 const teams = require('../models/teams')
 const leagues = require('../models/leagues')
 var summaryGreens = []
+var greenRatio = 0.95
+
+//var leagueFilter = 10932509
 
 var headersIddaa = {
   headers: {
@@ -52,6 +55,7 @@ async function scrapeIddaa() {
       allLiveIddaaEventSTM.forEach(liveEventSTM => {
         var eventResponses = liveEventSTM.eventGroup[0].eventResponse
         eventResponses.forEach(eventResponse => {
+          //if (leagueFilter == leagues.get(eventResponse.cn)) {
             var new_event = {
               league: eventResponse.cn,
               leagueId: leagues.get(eventResponse.cn),
@@ -67,7 +71,8 @@ async function scrapeIddaa() {
               mentionedLeagues.push(new_event.leagueId)
             }
             IddaaEvents.push(new_event)  
-          })
+          //}
+        })
       })
     })
     .catch(err => console.log(err))
@@ -82,6 +87,7 @@ async function scrapeIddaa() {
       allIddaaEventSPG.forEach(eventSPG => {
         var eventResponses = eventSPG.eventGroup[0].eventResponse
         eventResponses.forEach(eventResponse => {
+          //if (leagueFilter == leagues.get(eventResponse.cn)) {
             var new_event = {
               league: eventResponse.cn,
               leagueId: leagues.get(eventResponse.cn),
@@ -97,7 +103,7 @@ async function scrapeIddaa() {
               mentionedLeagues.push(new_event.leagueId)
             }
             IddaaEvents.push(new_event)  
-          
+          //}
         })
       })
     })
@@ -185,6 +191,7 @@ const scrapeAPI = async (q) => {
                   if (oddName == odd.ona) {
                     if (odd.odd > 1) {
                       allOdds.push({
+                        IddaaId: q.id,
                         marketName: marketName.marketName,
                         oddName: odd.ona,
                         displayName: marketName.displayName[n],
@@ -209,16 +216,11 @@ const scrapeAPI = async (q) => {
           headersIddaa)
         .then(matchSituation => {
           var matchData = matchSituation.data.doc[0].data
-          //var thisSituation = matchData[matchData.length-1]
-          //var minute = thisSituation.time.toString() + "'"
-          //var injurytime = thisSituation.injurytime
           var thisResult = matchData.match.result
-          //console.log(thisResult)
           matchResult = thisResult.home.toString() + ":" + thisResult.away.toString()
           var thisSituation = matchData.events.find((event) => {
             return event.type === "matchsituation"
           } )
-          //console.log(thisSituation)
           var minute = thisSituation.time.toString() + "'"
           var injurytime = thisSituation.injurytime
           matchTime = minute.toString()
@@ -288,9 +290,6 @@ const scrapeAPI = async (q) => {
             try {
               var ratio = runner.exchange.availableToBack[0].price / runner.exchange.availableToLay[0].price
               var thresholdRatio = 0.9
-              // console.log(runnerName)
-              // console.log(ratio)
-              // console.log(thresholdRatio)
               if (runnerName == '3 - 3') {
                 thresholdRatio = 0.75
               }
@@ -303,12 +302,10 @@ const scrapeAPI = async (q) => {
               }
               if (ratio <= thresholdRatio) {
                 new_odds.isValid = false
-                //console.log(new_odds)
               }
               bfOdds.push(new_odds)  
             } catch {
               console.log("Problem with: ", eventName, " - ", runnerName)
-              //console.log("Error: ", runner.exchange)
             }
           }
         })
@@ -326,13 +323,10 @@ const scrapeAPI = async (q) => {
               }
               if (ratio <= thresholdRatio) {
                 new_odds.isValid = false
-                //console.log(new_odds)
               }
               bfOdds.push(new_odds)            
-              //console.log(new_odds)
             } catch {
               console.log("Problem with: ", eventName, " - ", moreRunners.get(key))
-              //console.log("Error: ", runner.exchange)
             }
           }
         }
@@ -361,6 +355,7 @@ const scrapeAPI = async (q) => {
       })
       if (nPresented == 2) {
         var combined_record = {
+          oddId: allOdds[iddaaIndex].IddaaId.toString() + displayNames.get(key),
           playingTeams: eventName,
           displayName: displayNames.get(key),
           iddaaOdd: allOdds[iddaaIndex].odd,
@@ -371,8 +366,21 @@ const scrapeAPI = async (q) => {
           isValid: bfOdds[bfIndex].isValid
         }
         combined_odds.push(combined_record)
-        if (combined_record.ratio > 0.95) {
-          summaryGreens.push(combined_record)
+        // Updating or removing the record for the Summary section
+        var thisGreenIndex = summaryGreens.findIndex((summaryGreen) => {
+          return summaryGreen.oddId === combined_record.oddId
+        })
+        if(thisGreenIndex > -1) {
+          if (combined_record.ratio > greenRatio && combined_record.isValid) {
+            summaryGreens[thisGreenIndex] = combined_record
+          } else {
+            summaryGreens.splice(thisGreenIndex,1)
+          }
+        } else {
+          if (combined_record.ratio > greenRatio && combined_record.isValid) {
+            summaryGreens.push(combined_record)
+          } else {
+          }
         }
       }
     }
@@ -417,12 +425,16 @@ const scrapeAPI = async (q) => {
   }
 }
 
-function getSummary() {
-  console.log(summaryGreens)
+async function getSummary() {
   return summaryGreens
+}
+
+async function getVersion() {
+  return 0
 }
 
 module.exports.scrapeIddaa = scrapeIddaa
 module.exports.scrapeAPI = scrapeAPI
 module.exports.deleteFromMongoDB = deleteFromMongoDB
 module.exports.getSummary = getSummary
+module.exports.getVersion = getVersion

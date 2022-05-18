@@ -6,23 +6,6 @@ const app = express()
 app.use(express.static('css'))
 app.set('view engine', 'pug')
 
-// app.get('/', (req, res) => {
-//   const filters = new Promise((resolve, reject) => {
-//     scraper
-//       .loadFilters()
-//       .then(data => {
-//         resolve(data)
-//       })
-//       .catch(err => console.log(err))
-//   })
-
-//   Promise.all([filters])
-//     .then(data => {
-//       res.render('index', { data: { filters: data[0] }})
-//     })
-//     .catch(err => res.status(500).send(err))
-// })
-
 app.get(['/','/main'], (req, res) => {
   const iddaaCoefficients = new Promise((resolve, reject) => {
     scraper
@@ -57,10 +40,30 @@ app.get('/api', (req, res) => {
     .catch(err => res.status(500).send(err))
 })
 
+app.get('/version', (req, res) => {
+  const version = new Promise((resolve, reject) => {
+    scraper
+      .getVersion()
+      .then(data => {
+        resolve(data)
+      })
+      .catch(err => console.log("getVersion error: ", err))
+  })
+
+  Promise.all([version])
+    .then(data => {
+      res.render('index_version', data)
+    })
+    .catch(err => {
+      console.log("Error: ", err)
+      res.status(500).send(err)
+    })
+})
+
 app.get('/summary', (req, res) => {
   const getSummary = new Promise((resolve, reject) => {
     scraper
-      .getSummary()
+      .getSummary(req.query)
       .then(data => {
         resolve(data)
       })
@@ -71,7 +74,10 @@ app.get('/summary', (req, res) => {
     .then(data => {
       res.render('index_summary', { data: { summary: data[0] } })
     })
-    .catch(err => res.status(500).send(err))
+    .catch(err => {
+      console.log("Error: ", err)
+      res.status(500).send(err)
+    })
 })
 
 app.get('/delete', (req, res) => {
@@ -88,8 +94,8 @@ app.get('/delete', (req, res) => {
     .then(data => {
       res.render('index_scrape_input', { data: { id: data }})
     })
-    .catch(err => res.status(500).send(err))
-})
+    .catch(err => console.log(err))
+  })
 
 const mongoose = require('mongoose');
 

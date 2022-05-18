@@ -11,6 +11,13 @@ Set git remote heroku to https://git.heroku.com/forsmartswebscraper.git
 Deploy the application
 > git push heroku main
 ----------
+Make a copy of the branch in main
+----------
+git checkout main
+git checkout {branch-name} .
+git add --all
+git commit
+----------
 Mongo DB
 ----------
 Link to MongoDB host

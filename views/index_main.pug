@@ -13,15 +13,19 @@ html
       }
       function scrapeAll() {
         $("button.btn-match").click();
-        //$("#summary").load("/summary");
       }
       function deleteFromDB(eventID) {
         $("#buttons-match-"+eventID).load("/delete?iddaaID=" + eventID);
       }
+      function showSummary() {
+        $("#summary").load("/summary");
+      }
+      setInterval(() => showSummary(),5000);
+      setInterval(() => scrapeAll(),30000);
 
   body
     button(type="button" class= 'scrapeall' onclick="scrapeAll()") Scrape All
-    //div(id = 'summary')
+    div(id = 'summary')
     for event in data.iddaa
       h3(title = event.league) #{event.mbs} | #{event.playingTeams} 
         if event.bfurl != ''

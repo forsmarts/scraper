@@ -3,29 +3,19 @@
 h3 Summary section
   table(class='odds')
     tr
-      th 
-      each odd in allOdds
-        th= odd.displayName
-    tr
-      td B
-      each odd in allOdds
+      th Match 
+      th Odd 
+      th B 
+      th L 
+      th A 
+      th I 
+      th R
+    each odd in allOdds
+      tr
+        td= odd.playingTeams
+        td= odd.displayName
         td= odd.betfairBack
-    tr
-      td L
-      each odd in allOdds
         td= odd.betfairLay
-    tr
-      td A
-      each odd in allOdds
         td= odd.betfairAverage
-    tr
-      td I
-      each odd in allOdds
         td= odd.iddaaOdd
-    tr
-      td R
-      each odd in allOdds
-        if odd.ratio > 0.95
-          td.marked= odd.ratio
-        else 
-          td= odd.ratio
+        td= odd.ratio

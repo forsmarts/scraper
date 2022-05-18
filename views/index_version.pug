@@ -1,0 +1,55 @@
+- const versionNumber = 1.8
+html
+  head
+    title Odds comparison - version history
+    link(href="style.css" rel="stylesheet" type="text/css")
+  body
+    h1 Version info
+    h3 Current version: #{versionNumber}
+    h1 History
+    div  
+      h3 Version: 1.8 (5/19/2022)
+      div
+        p.
+          - Added summary section #[br]
+          - Added automatic odds refresh every 30 seconds
+          - Added version history page 
+    div  
+      h3 Version: 1.7 (5/16/2022)
+      div
+        p.
+          - Added MBS #[br]
+          - Added validation rules: #[br]
+          - - when I value is "1" , no need to mark the result as green #[br]
+          - - B/L should be smaller then 0,90 (for 3-3 this ratio can be 0,75) #[br]
+          - Invalid records are marked by red-ish background #[br]
+          - Current score and time added for live event #[br]
+          - More teams/leagues mappings added
+    div
+      h3 Version: 1.6 (5/7/2022) rolled back with 1.7
+      div
+        p - Added filtering by leagues
+    div
+      h3 Version: 1.5 (5/4/2022) 
+      div
+        p - Added "Delete link" button 
+    div
+      h3 Version: 1.4 (4/28/2022) 
+      div
+        p - Added teams/leagues mapping
+    div
+      h3 Version: 1.3 (3/1/2022) 
+      div
+        p - Odds for 3:3 added
+    div
+      h3 Version: 1.2 (2/27/2022) 
+      div
+        p - Added links to Betfair
+    div
+      h3 Version: 1.1 (2/20/2022) 
+      div
+        p - Added "Scrape all" button
+    div
+      h3 Version: 1.0 (2/18/2022) 
+      div
+        p - Initial version using API published
