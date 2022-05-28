@@ -1,9 +1,12 @@
 - const allOdds = data.allCoefficients.combined_odds
+- const message = data.allCoefficients.message
 - const matchResult = data.allCoefficients.matchResult
 - const matchTime = data.allCoefficients.matchTime
 - const isLive = data.allCoefficients.isLive
 - const greenRatio = 0.95
 
+if message != ''
+  h3= message 
 if allOdds != ''
   if matchTime != ''
     h2 Score: #{matchResult} Time: #{matchTime} 
