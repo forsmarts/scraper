@@ -7,7 +7,7 @@ Merge the branch to the main
 > git checkout main
 > git merge {branch-name}
 Set git remote heroku to https://git.heroku.com/forsmartswebscraper.git
-> heroku git:remote -a forsmartswebscraper
+> heroku git:remote -a {application-name}
 Deploy the application
 > git push heroku main
 ----------

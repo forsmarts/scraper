@@ -1,4 +1,4 @@
-- const versionNumber = 1.8
+- const versionNumber = 1.9
 html
   head
     title Odds comparison - version history
@@ -8,11 +8,20 @@ html
     h3 Current version: #{versionNumber}
     h1 History
     div  
+      h3 Version: 1.9 (5/28/2022)
+      div
+        p.
+          - Added handling of the ended events: #[br]
+          - - Ended games no longer stay in summary section #[br]
+          - - "The game is over" text appears for ended games #[br]
+          - Team names from Iddaa now appearing in the summary section #[br]
+          - Teams/leagues mapping is now stored in MongoDB
+    div  
       h3 Version: 1.8 (5/19/2022)
       div
         p.
           - Added summary section #[br]
-          - Added automatic odds refresh every 30 seconds
+          - Added automatic odds refresh every 30 seconds #[br]
           - Added version history page 
     div  
       h3 Version: 1.7 (5/16/2022)
