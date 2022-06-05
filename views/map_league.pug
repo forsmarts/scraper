@@ -1,0 +1,8 @@
+- const mapData = data.mapData
+- const message = data.message
+
+if message != ''
+  p #{message}
+else
+  div(id = 'mapped-league')
+    h2 Betfair: #{mapData[0]} / #{mapData[1]}

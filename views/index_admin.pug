@@ -1,7 +1,70 @@
 - const teams = data.teams
+- const leagues = data.leagues
+- var nLeagues = 0
+- var nTeams = 0
 
 html
   head
+    title Admin page
+    link(href="style.css" rel="stylesheet" type="text/css")
+    script(src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous")
+    script.
+      function mapBetfairLeague (nLeague,sIddaaName) {
+        var sBetfairLeagueName = $("#input-betfair-league-name-"+nLeague).val();
+        var sBetfairLeagueId = $("#input-betfair-league-id-"+nLeague).val();
+        var loadurl = '/mapleague?iddaa='+encodeURIComponent(sIddaaName)+'&bfn='+sBetfairLeagueName+'&bfid='+sBetfairLeagueId;
+        $("#league-"+nLeague).load(loadurl);
+      }
+      function mapTeamAlias (nTeam,sIddaaName) {
+        var sNewTeamAlias = $("#input-alias-"+nTeam).val();
+        var loadurl = '/mapteam?iddaa='+encodeURIComponent(sIddaaName)+'&alias='+encodeURIComponent(sNewTeamAlias);
+        $("#team-"+nTeam).load(loadurl);
+      }
+      function hideShowLeagues() {
+        $("#leagues").toggle();
+      }
+      function hideShowMappedLeagues() {
+        $("#mapped-league").toggle();
+      }
+      function hideShowTeams() {
+        $("#teams").toggle();
+      }
+      function hideShowMappedTeams() {
+        $("#mapped-team").toggle();
+      }
+      function toggleNotMapped(nTeam) {
+        $("#not-mapped-team-"+nTeam).toggle();
+      }
   body
-    each team in teams
-      p Iddaa: #{team.iddaaName} Betfair: #{team.betfairName}
+    button(type="button" class='btn-leagues' onclick="hideShowLeagues()") Show/hide leagues
+    div(id = 'leagues')
+      h1 Leagues
+      each league in leagues
+        - nLeagues = nLeagues + 1
+        p Iddaa: #{league.iddaaName}
+        div(id = 'league-'+nLeagues)
+        - if (typeof(league.betfairName) !== 'undefined'){
+        div(id = 'mapped-league-'+nLeagues)
+          h2 Betfair: #{league.betfairName} / #{league.betfairId}
+        - } else {
+        div(id = 'not-mapped-league-'+nLeagues)
+          input(id = 'input-betfair-league-name-' + nLeagues title = 'Enter Betfair league name')
+          input(id = 'input-betfair-league-id-' + nLeagues title = 'Enter Betfair league ID')
+          button(type="button" class='btn-map-league' onclick="mapBetfairLeague(" + nLeagues + ",'" + league.iddaaName + "')") Map Betfair league
+        - }
+    button(type="button" class='btn-teams' onclick="hideShowTeams()") Show/hide teams
+    div(id = 'teams')
+      h1 Teams
+      each team in teams
+        - nTeams = nTeams + 1
+        div(id = 'team-toggle-'+nTeams onclick="toggleNotMapped("+nTeams+")")  
+          p Iddaa: #{team.iddaaName}
+        div(id = 'team-'+nTeams)
+          - if (team.aliases.length !== 0){
+            div(id = 'mapped-team')
+              each alias in team.aliases
+                h2 #{alias}
+          - }
+        div(id ='not-mapped-team-'+nTeams hidden)
+          input(id = 'input-alias-' + nTeams title = 'Enter a new alias')
+          button(type="button" class='btn-map-league' onclick="mapTeamAlias(" + nTeams + ",'" + team.iddaaName + "')") Map new team alias

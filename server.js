@@ -37,6 +37,7 @@ app.get('/api', (req, res) => {
   Promise.all([getCoefficients])
     .then(data => {
       res.render('index_api', { data: { allCoefficients: data[0] } })
+      
     })
     .catch(err => res.status(500).send(err))
 })
@@ -62,18 +63,58 @@ app.get('/version', (req, res) => {
 })
 
 app.get('/admin', (req, res) => {
-  const getTeams = new Promise((resolve, reject) => {
+  const getAdmin = new Promise((resolve, reject) => {
     admin
-      .getTeams()
+      .getAdmin()
       .then(data => {
         resolve(data)
       })
-      .catch(err => console.log("admin error: ", err))
+      .catch(err => console.log("Admin error: ", err))
   })
 
-  Promise.all([getTeams])
+  Promise.all([getAdmin])
     .then(data => {
-      res.render('index_admin', { data: { teams: data[0] } })
+      res.render('index_admin', { data: { teams: data[0].teams, leagues: data[0].leagues } })
+    })
+    .catch(err => {
+      console.log("Error: ", err)
+      res.status(500).send(err)
+    })
+})
+
+app.get('/mapleague', (req, res) => {
+  const mapLeague = new Promise((resolve, reject) => {
+    admin
+      .mapLeague(req.query)
+      .then(data => {
+        resolve(data)
+      })
+      .catch(err => console.log("Map league error: ", err))
+  })
+
+  Promise.all([mapLeague])
+    .then(data => {
+      res.render('map_league', { data: data[0] })
+    })
+    .catch(err => {
+      console.log("Error: ", err)
+      res.status(500).send(err)
+    })
+})
+
+app.get('/mapteam', (req, res) => {
+  const mapTeam = new Promise((resolve, reject) => {
+    admin
+      .mapTeam(req.query)
+      .then(data => {
+        resolve(data)
+      })
+      .catch(err => console.log("Map league error: ", err))
+  })
+
+  Promise.all([mapTeam])
+    .then(data => {
+      res.render('map_team', { data: data[0] })
     })
     .catch(err => {
       console.log("Error: ", err)

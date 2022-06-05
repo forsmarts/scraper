@@ -1,0 +1,10 @@
+- const aliases = data.aliases
+- const message = data.message
+
+if message != ''
+  p #{message}
+else
+  div(id = 'mapped-team')
+    //p Aliases: 
+    each alias in aliases
+      h2 #{alias}

@@ -8,7 +8,7 @@ const displayNames = require('../models/displayNames')
 var summaryGreens = []
 var greenRatio = 0.95
 
-var leagueFilter = 10932509
+var leagueFilter = 0
 
 var headersIddaa = {
   headers: {
@@ -94,7 +94,7 @@ async function scrapeIddaa() {
                 }
               }  
             })
-            //if (leagueFilter == leagueID) {
+            if (leagueFilter == leagueID || leagueFilter == 0) {
             var new_event = {
               league: eventResponse.cn,
               leagueId: leagueID,
@@ -110,7 +110,7 @@ async function scrapeIddaa() {
               mentionedLeagues.push(new_event.leagueId)
             }
             IddaaEvents.push(new_event)
-            //}
+            }
           })
         })
       })
@@ -318,161 +318,164 @@ const scrapeAPI = async (q) => {
             marketPriceURL,
             headersBetfair
           )
+          var marketNodes = marketPriceData.data.eventTypes[0].eventNodes[0].marketNodes
+          var moreRunners = new Map
+          moreRunners.set(playingTeams[0], 'Result 1')
+          moreRunners.set('The Draw', 'Result 0')
+          moreRunners.set(playingTeams[1], 'Result 2')
+    
+          marketNodes.forEach(marketNode => {
+            marketNode.runners.forEach(runner => {
+              runnerNames.forEach(runnerName => {
+                if (runnerName == runner.description.runnerName) {
+                  try {
+                    var ratio = runner.exchange.availableToBack[0].price / runner.exchange.availableToLay[0].price
+                    var thresholdRatio = 0.9
+                    if (runnerName == '3 - 3') {
+                      thresholdRatio = 0.75
+                    }
+                    var new_odds = {
+                      odd: runnerName,
+                      back: runner.exchange.availableToBack[0].price,
+                      lay: runner.exchange.availableToLay[0].price,
+                      displayName: displayNames.get(runnerName),
+                      isValid: true
+                    }
+                    if (ratio <= thresholdRatio) {
+                      new_odds.isValid = false
+                    }
+                    bfOdds.push(new_odds)
+                  } catch {
+                    //console.log("Problem with: ", eventName, " - ", runnerName)
+                  }
+                }
+              })
+              for (var key of moreRunners.keys()) {
+                if (key === runner.description.runnerName) {
+                  try {
+                    var ratio = runner.exchange.availableToBack[0].price / runner.exchange.availableToLay[0].price
+                    var thresholdRatio = 0.9
+                    var new_odds = {
+                      odd: moreRunners.get(key),
+                      back: runner.exchange.availableToBack[0].price,
+                      lay: runner.exchange.availableToLay[0].price,
+                      displayName: displayNames.get(moreRunners.get(key)),
+                      isValid: true
+                    }
+                    if (ratio <= thresholdRatio) {
+                      new_odds.isValid = false
+                    }
+                    bfOdds.push(new_odds)
+                  } catch {
+                    //console.log("Problem with: ", eventName, " - ", moreRunners.get(key))
+                  }
+                }
+              }
+            })
+          })
+          var combined_odds = []
+          for (var key of displayNames.keys()) {
+            var nPresented = 0
+            var iddaaIndex = 0
+            var bfIndex = 0
+            var n = -1
+            allOdds.forEach(iddaaOdd => {
+              n = n + 1
+              if (displayNames.get(key) == iddaaOdd.displayName) {
+                nPresented = nPresented + 1
+                iddaaIndex = n
+              }
+            })
+            n = -1
+            bfOdds.forEach(bfOdd => {
+              n = n + 1
+              if (key == bfOdd.odd) {
+                nPresented = nPresented + 1
+                bfIndex = n
+              }
+            })
+            if (nPresented == 2) {
+              var combined_record = {
+                eventId: allOdds[iddaaIndex].IddaaId,
+                oddId: allOdds[iddaaIndex].IddaaId.toString() + displayNames.get(key),
+                playingTeams: eventName,
+                playingTeamsIddaa: allOdds[iddaaIndex].playingTeamsIddaa,
+                displayName: displayNames.get(key),
+                iddaaOdd: allOdds[iddaaIndex].odd,
+                betfairBack: bfOdds[bfIndex].back,
+                betfairLay: bfOdds[bfIndex].lay,
+                betfairAverage: Math.floor(1000 * ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2)) / 1000,
+                ratio: Math.floor(1000 * (allOdds[iddaaIndex].odd / ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2))) / 1000,
+                isValid: bfOdds[bfIndex].isValid
+              }
+              combined_odds.push(combined_record)
+              // Updating or removing the record for the Summary section
+              var thisGreenIndex = summaryGreens.findIndex((summaryGreen) => {
+                return summaryGreen.oddId === combined_record.oddId
+              })
+              if (thisGreenIndex > -1) {
+                if (combined_record.ratio > greenRatio && combined_record.isValid) {
+                  summaryGreens[thisGreenIndex] = combined_record
+                } else {
+                  summaryGreens.splice(thisGreenIndex, 1)
+                }
+              } else {
+                if (combined_record.ratio > greenRatio && combined_record.isValid) {
+                  summaryGreens.push(combined_record)
+                }
+              }
+            }
+          }
+          const savedEvents = await EventID.find()
+          let bFound = false
+          savedEvents.forEach(savedEvent => {
+            if (q.id == savedEvent.iddaaID) {
+              bFound = true
+              if (q.bf != savedEvent.betfairID) {
+                savedEvent.betfairID = q.bf
+                savedEvent.link = "/api?id=" + q.id + "&bf=" + q.bf
+                savedEvent.playingTeamsBF = eventName
+                savedEvent.save()
+                  .then((result) => {
+                    //console.log("BetfairID is updated for match: ", q.id)
+                  })
+                  .catch((err) => {
+                    console.log("BetfairID update failed: ", err)
+                  })
+              }
+              return
+            }
+          })
+          if (!bFound) {
+            const m = new EventID({
+              iddaaID: q.id,
+              betfairID: q.bf,
+              link: "/api?id=" + q.id + "&bf=" + q.bf
+            })
+            m.save()
+              .then((result) => {
+                //console.log("New record created for match: ", q.id)
+              })
+              .catch((err) => {
+                console.log("New record creation failed: ", err)
+              })
+          }
+          const scrapedData = { isLive: q.isLive, matchResult: matchResult, matchTime: matchTime, combined_odds: combined_odds, message: '' }
+          return scrapedData
         } catch (err) {
           console.log(err)
+          return { combined_odds: '', message: 'Unknown error'+q.id }
         }
-        var marketNodes = marketPriceData.data.eventTypes[0].eventNodes[0].marketNodes
-        var moreRunners = new Map
-        moreRunners.set(playingTeams[0], 'Result 1')
-        moreRunners.set('The Draw', 'Result 0')
-        moreRunners.set(playingTeams[1], 'Result 2')
-  
-        marketNodes.forEach(marketNode => {
-          marketNode.runners.forEach(runner => {
-            runnerNames.forEach(runnerName => {
-              if (runnerName == runner.description.runnerName) {
-                try {
-                  var ratio = runner.exchange.availableToBack[0].price / runner.exchange.availableToLay[0].price
-                  var thresholdRatio = 0.9
-                  if (runnerName == '3 - 3') {
-                    thresholdRatio = 0.75
-                  }
-                  var new_odds = {
-                    odd: runnerName,
-                    back: runner.exchange.availableToBack[0].price,
-                    lay: runner.exchange.availableToLay[0].price,
-                    displayName: displayNames.get(runnerName),
-                    isValid: true
-                  }
-                  if (ratio <= thresholdRatio) {
-                    new_odds.isValid = false
-                  }
-                  bfOdds.push(new_odds)
-                } catch {
-                  //console.log("Problem with: ", eventName, " - ", runnerName)
-                }
-              }
-            })
-            for (var key of moreRunners.keys()) {
-              if (key === runner.description.runnerName) {
-                try {
-                  var ratio = runner.exchange.availableToBack[0].price / runner.exchange.availableToLay[0].price
-                  var thresholdRatio = 0.9
-                  var new_odds = {
-                    odd: moreRunners.get(key),
-                    back: runner.exchange.availableToBack[0].price,
-                    lay: runner.exchange.availableToLay[0].price,
-                    displayName: displayNames.get(moreRunners.get(key)),
-                    isValid: true
-                  }
-                  if (ratio <= thresholdRatio) {
-                    new_odds.isValid = false
-                  }
-                  bfOdds.push(new_odds)
-                } catch {
-                  //console.log("Problem with: ", eventName, " - ", moreRunners.get(key))
-                }
-              }
-            }
-          })
-        })
-        var combined_odds = []
-        for (var key of displayNames.keys()) {
-          var nPresented = 0
-          var iddaaIndex = 0
-          var bfIndex = 0
-          var n = -1
-          allOdds.forEach(iddaaOdd => {
-            n = n + 1
-            if (displayNames.get(key) == iddaaOdd.displayName) {
-              nPresented = nPresented + 1
-              iddaaIndex = n
-            }
-          })
-          n = -1
-          bfOdds.forEach(bfOdd => {
-            n = n + 1
-            if (key == bfOdd.odd) {
-              nPresented = nPresented + 1
-              bfIndex = n
-            }
-          })
-          if (nPresented == 2) {
-            var combined_record = {
-              eventId: allOdds[iddaaIndex].IddaaId,
-              oddId: allOdds[iddaaIndex].IddaaId.toString() + displayNames.get(key),
-              playingTeams: eventName,
-              playingTeamsIddaa: allOdds[iddaaIndex].playingTeamsIddaa,
-              displayName: displayNames.get(key),
-              iddaaOdd: allOdds[iddaaIndex].odd,
-              betfairBack: bfOdds[bfIndex].back,
-              betfairLay: bfOdds[bfIndex].lay,
-              betfairAverage: Math.floor(1000 * ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2)) / 1000,
-              ratio: Math.floor(1000 * (allOdds[iddaaIndex].odd / ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2))) / 1000,
-              isValid: bfOdds[bfIndex].isValid
-            }
-            combined_odds.push(combined_record)
-            // Updating or removing the record for the Summary section
-            var thisGreenIndex = summaryGreens.findIndex((summaryGreen) => {
-              return summaryGreen.oddId === combined_record.oddId
-            })
-            if (thisGreenIndex > -1) {
-              if (combined_record.ratio > greenRatio && combined_record.isValid) {
-                summaryGreens[thisGreenIndex] = combined_record
-              } else {
-                summaryGreens.splice(thisGreenIndex, 1)
-              }
-            } else {
-              if (combined_record.ratio > greenRatio && combined_record.isValid) {
-                summaryGreens.push(combined_record)
-              }
-            }
-          }
-        }
-        const savedEvents = await EventID.find()
-        let bFound = false
-        savedEvents.forEach(savedEvent => {
-          if (q.id == savedEvent.iddaaID) {
-            bFound = true
-            if (q.bf != savedEvent.betfairID) {
-              savedEvent.betfairID = q.bf
-              savedEvent.link = "/api?id=" + q.id + "&bf=" + q.bf
-              savedEvent.playingTeamsBF = eventName
-              savedEvent.save()
-                .then((result) => {
-                  //console.log("BetfairID is updated for match: ", q.id)
-                })
-                .catch((err) => {
-                  console.log("BetfairID update failed: ", err)
-                })
-            }
-            return
-          }
-        })
-        if (!bFound) {
-          const m = new EventID({
-            iddaaID: q.id,
-            betfairID: q.bf,
-            link: "/api?id=" + q.id + "&bf=" + q.bf
-          })
-          m.save()
-            .then((result) => {
-              //console.log("New record created for match: ", q.id)
-            })
-            .catch((err) => {
-              console.log("New record creation failed: ", err)
-            })
-        }
-        const scrapedData = { isLive: q.isLive, matchResult: matchResult, matchTime: matchTime, combined_odds: combined_odds, message: '' }
-        return scrapedData
       } catch (err) {
         console.log("Get marketIDsData error (L2): ", err)
+        return { combined_odds: '', message: 'Unknown error'+q.id }
       }
     } catch (err) { 
       console.log("Get marketIDsData error (L1):", err)
+      return { combined_odds: '', message: 'Unknown error'+q.id }
     }
   } else {
-    return { combined_odds: '', message: ''  }
+    return { combined_odds: '', message: ''}
   }
 }
 
