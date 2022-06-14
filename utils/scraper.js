@@ -2,13 +2,14 @@ const axios = require('axios')
 const EventID = require('../models/eventIDs')
 const TeamID = require('../models/teamIDs')
 const LeagueID = require('../models/leagueIDs')
+const PerformanceLog = require('../models/PerformanceLogs')
 const displayNames = require('../models/displayNames')
 //const teams = require('../models/teams')
 //const leagues = require('../models/leagues')
 var summaryGreens = []
 var greenRatio = 0.95
 
-var leagueFilter = 0
+var leagueFilter = -1
 
 var headersIddaa = {
   headers: {
@@ -42,9 +43,15 @@ async function deleteFromMongoDB(q) {
 
 // Scrape Iddaa
 async function scrapeIddaa() {
+  var startTime = new Date().getTime()
+  //console.log("start:  ", startTime)
   await EventID.deleteMany({ date: { $lte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
   var leagues = await LeagueID.find()
   var teams = await TeamID.find()
+  const savedMatches = await EventID.find()
+  var newTime = new Date().getTime()
+  var leaguesTeamsFromMongoDB = (newTime - startTime) / 1000
+  console.log("Leagues/teams loaded: ", (newTime - startTime) / 1000, " sec")
   var IddaaEvents = []
   var mentionedLeagues = []
   var unknownLeagues = []
@@ -94,28 +101,39 @@ async function scrapeIddaa() {
                 }
               }  
             })
-            if (leagueFilter == leagueID || leagueFilter == 0) {
-            var new_event = {
-              league: eventResponse.cn,
-              leagueId: leagueID,
-              playingTeams: eventResponse.en,
-              eventID: eventResponse.eid,
-              date: eventResponse.e,
-              mbs: eventResponse.mb,
-              link: '',
-              bfurl: '',
-              isLive: isLive
-            }
-            if (mentionedLeagues.indexOf(new_event.leagueId) == -1) {
-              mentionedLeagues.push(new_event.leagueId)
-            }
-            IddaaEvents.push(new_event)
+            if (leagueFilter == leagueID || leagueFilter == -1) {
+              var savedMatch = savedMatches.find(savedMatch => savedMatch.iddaaID === eventResponse.eid)
+              var new_event = {
+                league: eventResponse.cn,
+                leagueId: leagueID,
+                playingTeams: eventResponse.en,
+                eventID: eventResponse.eid,
+                date: eventResponse.e,
+                mbs: eventResponse.mb,
+                link: '',
+                //bfurl: '',
+                isLive: isLive
+              }
+              if(typeof savedMatch == 'undefined') {
+                if (mentionedLeagues.indexOf(new_event.leagueId) == -1) {
+                  mentionedLeagues.push(new_event.leagueId)
+                }
+              } else {
+                new_event.eventID = savedMatch.iddaaID
+                new_event.link = savedMatch.link
+                new_event.betfairEventID = savedMatch.betfairID
+              }
+              IddaaEvents.push(new_event)
             }
           })
         })
       })
       .catch(err => console.log(err))
   }
+  console.log("Iddaa events loaded: ", (new Date().getTime() - newTime) / 1000, " sec")
+  console.log("Iddaa events count: ", IddaaEvents.length)
+  var iddaaNewTime = new Date().getTime()
+  var iddaaTime = (iddaaNewTime - newTime) / 1000
 
   //console.log(unknownLeagues)
   unknownLeagues.forEach(unknownLeague => {
@@ -133,27 +151,35 @@ async function scrapeIddaa() {
     newTeam.save()
   })
 
-  const savedMatches = await EventID.find()
-  let bFound = false
-  IddaaEvents.forEach(IddaaEvent => {
-    bFound = false
-    savedMatches.forEach(savedMatch => {
-      if (IddaaEvent.eventID == savedMatch.iddaaID) {
-        bFound = true
-        if (IddaaEvent.betfairEventID != savedMatch.betfairID) {
-          IddaaEvent.betfairEventID = savedMatch.betfairID
-          IddaaEvent.link = savedMatch.link
-        }
-        if (typeof savedMatch.date == 'undefined') {
-          savedMatch.date = IddaaEvent.date
-        }
-        savedMatch.save()
-      }
-    })
-  })
+  var unknownNewTime = new Date().getTime()
+  console.log("Unknown leagues/teams processed: ", (unknownNewTime - iddaaNewTime) / 1000, " sec")
 
+  //const savedMatches = await EventID.find()
+  // let bFound = false
+  // IddaaEvents.forEach(IddaaEvent => {
+  //   bFound = false
+  //   savedMatches.forEach(savedMatch => {
+  //     if (IddaaEvent.eventID == savedMatch.iddaaID) {
+  //       bFound = true
+  //       if (IddaaEvent.betfairEventID != savedMatch.betfairID) {
+  //         IddaaEvent.betfairEventID = savedMatch.betfairID
+  //         IddaaEvent.link = savedMatch.link
+  //       }
+  //       if (typeof savedMatch.date == 'undefined') {
+  //         savedMatch.date = IddaaEvent.date
+  //       }
+  //       savedMatch.save()
+  //     }
+  //   })
+  // })
+
+  console.log("Saved matches updated: ", (new Date().getTime() - unknownNewTime) / 1000, " sec")
+  var newStartTime = new Date().getTime()
+  var betfairTime = []
+  var leagueSize
   // Get all Betfair maket data
   for (mentionedLeague of mentionedLeagues) {
+    leagueSize = 0
     await axios
       .post(
         'https://scan-inbf.betfair.com/www/sports/navigation/facet/v1/search',
@@ -165,6 +191,7 @@ async function scrapeIddaa() {
         IddaaEvents.forEach(IddaaEvent => {
           for (var key in leagueEvents) {
             if (leagueEvents[key].competitionId == IddaaEvent.leagueId) {
+              leagueSize = leagueSize + 1
               var playingTeamsBF = leagueEvents[key].name.split(' v ')
               var team0 = teams.find(team => team.aliases.indexOf(playingTeamsBF[0]) > -1)
               var team1 = teams.find(team => team.aliases.indexOf(playingTeamsBF[1]) > -1)
@@ -178,10 +205,10 @@ async function scrapeIddaa() {
               if (IddaaEvent.playingTeams == playingTeamsIddaaStyle || IddaaEvent.betfairEventID == leagueEvents[key].eventId) {
                 IddaaEvent.betfairEventID = leagueEvents[key].eventId
                 IddaaEvent.link = '/api?id=' + IddaaEvent.eventID + '&bf=' + leagueEvents[key].eventId
-                var league = leagues.find(league => league.betfairID == IddaaEvent.leagueId)
-                if (typeof league != 'undefined') {
-                  IddaaEvent.bfurl = 'https://www.betfair.com/exchange/plus/en/football/' + league.betfairID + '/' + leagueEvents[key].name.replaceAll(" ", "-").toLowerCase() + '-betting-' + leagueEvents[key].eventId
-                }
+                //var league = leagues.find(league => league.betfairID == IddaaEvent.leagueId)
+                // if (typeof league != 'undefined') {
+                //   IddaaEvent.bfurl = 'https://www.betfair.com/exchange/plus/en/football/' + league.betfairID + '/' + leagueEvents[key].name.replaceAll(" ", "-").toLowerCase() + '-betting-' + leagueEvents[key].eventId
+                // }
               } else {
               }
             }
@@ -189,8 +216,32 @@ async function scrapeIddaa() {
         })
       })
       .catch(err => console.log(err))
+      var oneNewStartTime = new Date().getTime()
+      //console.log("League ", mentionedLeague, " processed: ", (oneNewStartTime - newStartTime) / 1000, " sec")
+      var performanceRecord = 
+        {
+          league: mentionedLeague,
+          leagueSize: leagueSize,
+          spentTime: (oneNewStartTime - newStartTime) / 1000
+        }
+      console.log("performanceRecord: ", performanceRecord)
+      betfairTime.push(performanceRecord)
+      newStartTime = oneNewStartTime
   }
   const data = IddaaEvents
+
+  console.log("Betfair data loaded: ", (new Date().getTime() - startTime) / 1000, " sec")
+  var totalLoadTime = (new Date().getTime() - startTime) / 1000
+
+  const newPerformanceLog = new PerformanceLog({
+    totalLoadTime: totalLoadTime,
+    leaguesTeamsFromMongoDB: leaguesTeamsFromMongoDB,
+    iddaa: iddaaTime,
+    iddaaCount: data.length,
+    betfair: betfairTime
+  })
+  newPerformanceLog.save()
+
   return data
 }
 
@@ -262,20 +313,25 @@ const scrapeAPI = async (q) => {
           headersIddaa)
         .then(matchSituation => {
           var matchData = matchSituation.data.doc[0].data
-          var thisResult = matchData.match.result
-          var thoseTeams = matchData.match.teams
-          playingTeamsForError = thoseTeams.home.name + ' - ' + thoseTeams.away.name
-          matchResult = thisResult.home.toString() + ":" + thisResult.away.toString()
-          var thisSituation = matchData.events.find((event) => {
-            return event.type === "matchsituation"
-          })
-          if (typeof thisSituation != 'undefined') {
-            var minute = thisSituation.time.toString() + "'"
-            var injurytime = thisSituation.injurytime
-            matchTime = minute.toString()
-            if (injurytime > 0) {
-              matchTime = matchTime + " + " + injurytime.toString() + "'"
+          //console.log("matchData: ", matchData)
+          try {
+            var thisResult = matchData.match.result
+            var thoseTeams = matchData.match.teams
+            playingTeamsForError = thoseTeams.home.name + ' - ' + thoseTeams.away.name
+            matchResult = thisResult.home.toString() + ":" + thisResult.away.toString()
+            var thisSituation = matchData.events.find((event) => {
+              return event.type === "matchsituation"
+            })
+            if (typeof thisSituation != 'undefined') {
+              var minute = thisSituation.time.toString() + "'"
+              var injurytime = thisSituation.injurytime
+              matchTime = minute.toString()
+              if (injurytime > 0) {
+                matchTime = matchTime + " + " + injurytime.toString() + "'"
+              }  
             }  
+          } catch {
+            console.log("Error in matchData: ", err)
           }
         })
         .catch(err => console.log(playingTeamsForError, err))
