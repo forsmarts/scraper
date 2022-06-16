@@ -12,9 +12,9 @@ html
       }
       function scrapeLink(eventID,betfairID,isLive) {
         if (isLive) {
-          $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID+"&isLive="+isLive, () => setTimeout(scrapeLink(eventID,betfairID,isLive), 15000));
+          $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID+"&isLive="+isLive, () => setTimeout(() => scrapeLink(eventID,betfairID,isLive), 15000));
         } else {
-          $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID+"&isLive="+isLive, () => setTimeout(scrapeLink(eventID,betfairID,isLive), 60000));
+          $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID+"&isLive="+isLive, () => setTimeout(() => scrapeLink(eventID,betfairID,isLive), 60000));
         }
       }
       function scrapeAll() {
@@ -24,12 +24,12 @@ html
         $("#buttons-match-"+eventID).load("/delete?iddaaID=" + eventID);
       }
       function showSummary() {
-        $("#summary").load("/summary", () => setTimeout(showSummary, 5000));
+        $("#summary").load("/summary", () => setTimeout(() => showSummary(), 5000));
       }
-      setTimeout(() => { showSummary(); }, 5000);
+      setTimeout(() => showSummary(), 6000);
       //showSummary();
       //setInterval(() => showSummary(),5000);
-      setTimeout(() => scrapeAll(), 6000);
+      setTimeout(() => scrapeAll(), 2000);
       //setInterval(() => scrapeAll(),60000);
 
   body

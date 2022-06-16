@@ -3,9 +3,6 @@ const EventID = require('../models/eventIDs')
 const TeamID = require('../models/teamIDs')
 const LeagueID = require('../models/leagueIDs')
 const PerformanceLog = require('../models/performanceLogs')
-const displayNames = require('../models/displayNames')
-//const teams = require('../models/teams')
-//const leagues = require('../models/leagues')
 var summaryGreens = []
 var greenRatio = 0.95
 
@@ -25,15 +22,18 @@ var headersBetfair = {
   }
 }
 
-const marketNames = [
-  { marketName: 'Maç Sonucu', oddNames: ['1', '0', '2'], displayName: ['1', '0', '2'] },
-  { marketName: 'Altı/Üstü 0,5', oddNames: ['Alt', 'Üst'], displayName: ['U 0.5', 'O 0.5'] },
-  { marketName: 'Altı/Üstü 1,5', oddNames: ['Alt', 'Üst'], displayName: ['U 1.5', 'O 1.5'] },
-  { marketName: 'Altı/Üstü 2,5', oddNames: ['Alt', 'Üst'], displayName: ['U 2.5', 'O 2.5'] },
-  { marketName: 'Altı/Üstü 3,5', oddNames: ['Alt', 'Üst'], displayName: ['U 3.5', 'O 3.5'] },
-  { marketName: 'Altı/Üstü 4,5', oddNames: ['Alt', 'Üst'], displayName: ['U 4.5', 'O 4.5'] },
-  { marketName: 'Karşılıklı Gol', oddNames: ['Var', 'Yok'], displayName: ['BSY', 'BSN'] },
-  { marketName: 'Maç Skoru', oddNames: ['3:3'], displayName: ['3:3'] }
+var marketsRunnersDisplays = [
+  { marketNameBF: 'Match Odds', runners: [], marketNameIddaa: 'Maç Sonucu', oddNames: ['1', '0', '2'], displayName: ['1', '0', '2'] },
+  { marketNameBF: 'Over/Under 0.5 Goals', runners: ['Under 0.5 Goals', 'Over 0.5 Goals'], marketNameIddaa: 'Altı/Üstü 0,5', oddNames: ['Alt', 'Üst'], displayName: ['U 0.5', 'O 0.5'] },
+  { marketNameBF: 'Over/Under 1.5 Goals', runners: ['Under 1.5 Goals', 'Over 1.5 Goals'], marketNameIddaa: 'Altı/Üstü 1,5', oddNames: ['Alt', 'Üst'], displayName: ['U 1.5', 'O 1.5'] },
+  { marketNameBF: 'Over/Under 2.5 Goals', runners: ['Under 2.5 Goals', 'Over 2.5 Goals'], marketNameIddaa: 'Altı/Üstü 2,5', oddNames: ['Alt', 'Üst'], displayName: ['U 2.5', 'O 2.5'] },
+  { marketNameBF: 'Over/Under 3.5 Goals', runners: ['Under 3.5 Goals', 'Over 3.5 Goals'], marketNameIddaa: 'Altı/Üstü 3,5', oddNames: ['Alt', 'Üst'], displayName: ['U 3.5', 'O 3.5'] },
+  { marketNameBF: 'Over/Under 4.5 Goals', runners: ['Under 4.5 Goals', 'Over 4.5 Goals'], marketNameIddaa: 'Altı/Üstü 4,5', oddNames: ['Alt', 'Üst'], displayName: ['U 4.5', 'O 4.5'] },
+  { marketNameBF: 'First Half Goals 0.5', runners: ['Under 0.5 Goals', 'Over 0.5 Goals'], marketNameIddaa: 'İlk Yarı Altı/Üstü 0,5', oddNames: ['Alt', 'Üst'], displayName: ['HT U 0.5', 'HT O 0.5'] },
+  { marketNameBF: 'First Half Goals 1.5', runners: ['Under 1.5 Goals', 'Over 1.5 Goals'], marketNameIddaa: 'İlk Yarı Altı/Üstü 1,5', oddNames: ['Alt', 'Üst'], displayName: ['HT U 1.5', 'HT O 1.5'] },
+  { marketNameBF: 'First Half Goals 2.5', runners: ['Under 2.5 Goals', 'Over 2.5 Goals'], marketNameIddaa: 'İlk Yarı Altı/Üstü 2,5', oddNames: ['Alt', 'Üst'], displayName: ['HT U 2.5', 'HT O 2.5'] },
+  { marketNameBF: 'Both teams to Score?', runners: ['Yes', 'No'], marketNameIddaa: 'Karşılıklı Gol', oddNames: ['Var', 'Yok'], displayName: ['BSY', 'BSN'] },
+  { marketNameBF: 'Correct Score', runners: ['3 - 3'], marketNameIddaa: 'Maç Skoru', oddNames: ['3:3'], displayName: ['3:3'] }
 ]
 
 async function deleteFromMongoDB(q) {
@@ -44,7 +44,6 @@ async function deleteFromMongoDB(q) {
 // Scrape Iddaa
 async function scrapeIddaa() {
   var startTime = new Date().getTime()
-  //console.log("start:  ", startTime)
   await EventID.deleteMany({ date: { $lte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
   var leagues = await LeagueID.find()
   var teams = await TeamID.find()
@@ -95,7 +94,6 @@ async function scrapeIddaa() {
             playingTeamsIddaa.forEach (playingTeamIddaa => {
               var teamDoc = teams.find(team => team.iddaaName === playingTeamIddaa)
               if (typeof teamDoc == 'undefined') {
-                //console.log(playingTeamIddaa)
                 if (unknownTeams.indexOf(playingTeamIddaa) == -1) {
                   unknownTeams.push(playingTeamIddaa)
                 }
@@ -111,7 +109,6 @@ async function scrapeIddaa() {
                 date: eventResponse.e,
                 mbs: eventResponse.mb,
                 link: '',
-                //bfurl: '',
                 isLive: isLive
               }
               if(typeof savedMatch == 'undefined') {
@@ -135,7 +132,6 @@ async function scrapeIddaa() {
   var iddaaNewTime = new Date().getTime()
   var iddaaTime = (iddaaNewTime - newTime) / 1000
 
-  //console.log(unknownLeagues)
   unknownLeagues.forEach(unknownLeague => {
     const newLeague = new LeagueID({
       iddaaName: unknownLeague
@@ -143,7 +139,6 @@ async function scrapeIddaa() {
     newLeague.save()
   })
 
-  //console.log(unknownTeams)
   unknownTeams.forEach(unknownTeam => {
     const newTeam = new TeamID({
       iddaaName: unknownTeam
@@ -153,27 +148,6 @@ async function scrapeIddaa() {
 
   var unknownNewTime = new Date().getTime()
   console.log("Unknown leagues/teams processed: ", (unknownNewTime - iddaaNewTime) / 1000, " sec")
-
-  //const savedMatches = await EventID.find()
-  // let bFound = false
-  // IddaaEvents.forEach(IddaaEvent => {
-  //   bFound = false
-  //   savedMatches.forEach(savedMatch => {
-  //     if (IddaaEvent.eventID == savedMatch.iddaaID) {
-  //       bFound = true
-  //       if (IddaaEvent.betfairEventID != savedMatch.betfairID) {
-  //         IddaaEvent.betfairEventID = savedMatch.betfairID
-  //         IddaaEvent.link = savedMatch.link
-  //       }
-  //       if (typeof savedMatch.date == 'undefined') {
-  //         savedMatch.date = IddaaEvent.date
-  //       }
-  //       savedMatch.save()
-  //     }
-  //   })
-  // })
-
-  console.log("Saved matches updated: ", (new Date().getTime() - unknownNewTime) / 1000, " sec")
   var newStartTime = new Date().getTime()
   var betfairTime = []
   var leagueSize
@@ -205,10 +179,6 @@ async function scrapeIddaa() {
               if (IddaaEvent.playingTeams == playingTeamsIddaaStyle || IddaaEvent.betfairEventID == leagueEvents[key].eventId) {
                 IddaaEvent.betfairEventID = leagueEvents[key].eventId
                 IddaaEvent.link = '/api?id=' + IddaaEvent.eventID + '&bf=' + leagueEvents[key].eventId
-                //var league = leagues.find(league => league.betfairID == IddaaEvent.leagueId)
-                // if (typeof league != 'undefined') {
-                //   IddaaEvent.bfurl = 'https://www.betfair.com/exchange/plus/en/football/' + league.betfairID + '/' + leagueEvents[key].name.replaceAll(" ", "-").toLowerCase() + '-betting-' + leagueEvents[key].eventId
-                // }
               } else {
               }
             }
@@ -217,7 +187,6 @@ async function scrapeIddaa() {
       })
       .catch(err => console.log(err))
       var oneNewStartTime = new Date().getTime()
-      //console.log("League ", mentionedLeague, " processed: ", (oneNewStartTime - newStartTime) / 1000, " sec")
       var performanceRecord = 
         {
           league: mentionedLeague,
@@ -252,7 +221,7 @@ const scrapeAPI = async (q) => {
     var nLive = 1
     var liveId
     var getURL
-    var playingTeamsForError = ""
+    var playingTeamsIddaa = ""
     var isOver = false
     if (q.isLive == 'true') { nLive = 2 }
     getURL = 'https://sportprogram.iddaa.com/SportProgram/market/' + nLive + '/1/' + q.id
@@ -261,42 +230,38 @@ const scrapeAPI = async (q) => {
         getURL,
         headersIddaa)
       .then(allOddsForEvent => {
-        //console.log(getURL)
         if (allOddsForEvent.data.data.event != null) {
           liveId = allOddsForEvent.data.data.event.bid
           var allMarkets = allOddsForEvent.data.data.event.m
-          playingTeamsForError = allOddsForEvent.data.data.event.en
-          allMarkets.forEach(market => {
-            marketNames.forEach(marketName => {
-              if (market.mn == marketName.marketName) {
-                market.o.forEach(odd => {
+          playingTeamsIddaa = allOddsForEvent.data.data.event.en
+            marketsRunnersDisplays.forEach(market => {
+              var marketIddaa = allMarkets.find(m => m.mn === market.marketNameIddaa)
+              if (typeof marketIddaa != 'undefined') {
                   var n = -1
-                  marketName.oddNames.forEach(oddName => {
+                  market.oddNames.forEach(oddName => {
                     n = n + 1
-                    if (oddName == odd.ona) {
+                    var odd = marketIddaa.o.find(o => o.ona === oddName)
+                    if (typeof odd != 'undefined') {
                       if (odd.odd > 1) {
                         allOdds.push({
                           IddaaId: q.id,
-                          playingTeamsIddaa: playingTeamsForError,
-                          marketName: marketName.marketName,
+                          playingTeamsIddaa: playingTeamsIddaa,
+                          marketName: market.marketNameIddaa,
                           oddName: odd.ona,
-                          displayName: marketName.displayName[n],
+                          displayName: market.displayName[n],
                           odd: odd.odd
                         })
                       }
                     }
                   })
-                })
               }
             })
-          })  
         } else {
           isOver = true          
         }
       })
-      .catch(err => console.log(playingTeamsForError, err))
-    if (isOver) {
-      //console.log("The game is over")
+      .catch(err => console.log(playingTeamsIddaa, err))
+          if (isOver) {
       summaryGreens = summaryGreens.filter((summaryGreen) => {
         return summaryGreen.eventId != q.id
       })
@@ -306,18 +271,16 @@ const scrapeAPI = async (q) => {
     var matchResult = ""
     if (q.isLive == 'true') {
       getURL = 'https://lmt.fn.sportradar.com/common/tr/Etc:UTC/gismo/match_timelinedelta/' + liveId
-      //console.log(getURL)
       await axios
         .get(
           getURL,
           headersIddaa)
         .then(matchSituation => {
           var matchData = matchSituation.data.doc[0].data
-          //console.log("matchData: ", matchData)
           try {
             var thisResult = matchData.match.result
             var thoseTeams = matchData.match.teams
-            playingTeamsForError = thoseTeams.home.name + ' - ' + thoseTeams.away.name
+            playingTeamsIddaa = thoseTeams.home.name + ' - ' + thoseTeams.away.name
             matchResult = thisResult.home.toString() + ":" + thisResult.away.toString()
             var thisSituation = matchData.events.find((event) => {
               return event.type === "matchsituation"
@@ -334,32 +297,29 @@ const scrapeAPI = async (q) => {
             console.log("Error in matchData: ", err)
           }
         })
-        .catch(err => console.log(playingTeamsForError, err))
+        .catch(err => console.log(playingTeamsIddaa, err))
     }
-
-    const runnerNames = ['Under 0.5 Goals', 'Over 0.5 Goals', 'Under 1.5 Goals', 'Over 1.5 Goals', 'Under 2.5 Goals', 'Over 2.5 Goals', 'Under 3.5 Goals', 'Over 3.5 Goals', 'Under 4.5 Goals', 'Over 4.5 Goals', 'Yes', 'No', '3 - 3']
-    const marketNamesBF = ['Match Odds', 'Over/Under 0.5 Goals', 'Over/Under 1.5 Goals', 'Over/Under 2.5 Goals', 'Over/Under 3.5 Goals', 'Over/Under 4.5 Goals', 'Both teams to Score?', 'Correct Score']
     try {
       marketIDsData = await axios.get(
-        'https://ero.betfair.com/www/sports/exchange/readonly/v1/byevent?eventIds=' + q.bf + '&types=MARKET_STATE,EVENT,MARKET_DESCRIPTION',
+        'https://ero.betfair.com/www/sports/exchange/readonly/v1/byevent?eventIds=' + q.bf + '&types=EVENT,MARKET_DESCRIPTION',
         headersBetfair
       )
       var eventName
       try {
-        eventName = marketIDsData.data.eventTypes[0].eventNodes[0].event.eventName
+        var eventName = marketIDsData.data.eventTypes[0].eventNodes[0].event.eventName
         const playingTeams = eventName.split(" v ")
         var marketNodes = marketIDsData.data.eventTypes[0].eventNodes[0].marketNodes
         var marketIDs = []
-        marketNamesBF.forEach(marketName => {
-          marketNodes.forEach(marketNode => {
-            if (marketNode.description.marketName == marketName) {
+        marketsRunnersDisplays.forEach(market => {
+          var marketName = market.marketNameBF
+            var marketNode = marketNodes.find(node => node.description.marketName === marketName)
+            if (typeof marketNode != 'undefined') {
               var new_market = {
                 marketName: marketName,
                 marketID: marketNode.marketId
               }
               marketIDs.push(new_market)
             }
-          })
         })
         var MarketIDs = ""
         marketIDs.forEach(marketID => {
@@ -375,15 +335,20 @@ const scrapeAPI = async (q) => {
             headersBetfair
           )
           var marketNodes = marketPriceData.data.eventTypes[0].eventNodes[0].marketNodes
-          var moreRunners = new Map
-          moreRunners.set(playingTeams[0], 'Result 1')
-          moreRunners.set('The Draw', 'Result 0')
-          moreRunners.set(playingTeams[1], 'Result 2')
-    
-          marketNodes.forEach(marketNode => {
-            marketNode.runners.forEach(runner => {
-              runnerNames.forEach(runnerName => {
-                if (runnerName == runner.description.runnerName) {
+          var moreRunners = []
+          moreRunners.push(playingTeams[0])
+          moreRunners.push('The Draw')
+          moreRunners.push(playingTeams[1])
+          marketsRunnersDisplays[0].runners = moreRunners
+          marketIDs.forEach(marketID => {
+            var marketNode = marketNodes.find(node => node.marketId === marketID.marketID)
+            var market = marketsRunnersDisplays.find(market => market.marketNameBF === marketID.marketName)
+            if(typeof marketNode != 'undefined') {
+              var n=-1
+              market.runners.forEach(runnerName => {
+                n = n+1
+                var runner = marketNode.runners.find(runner => runner.description.runnerName === runnerName)
+                if (typeof runner != 'undefined') {
                   try {
                     var ratio = runner.exchange.availableToBack[0].price / runner.exchange.availableToLay[0].price
                     var thresholdRatio = 0.9
@@ -394,7 +359,7 @@ const scrapeAPI = async (q) => {
                       odd: runnerName,
                       back: runner.exchange.availableToBack[0].price,
                       lay: runner.exchange.availableToLay[0].price,
-                      displayName: displayNames.get(runnerName),
+                      displayName: market.displayName[n],
                       isValid: true
                     }
                     if (ratio <= thresholdRatio) {
@@ -406,63 +371,26 @@ const scrapeAPI = async (q) => {
                   }
                 }
               })
-              for (var key of moreRunners.keys()) {
-                if (key === runner.description.runnerName) {
-                  try {
-                    var ratio = runner.exchange.availableToBack[0].price / runner.exchange.availableToLay[0].price
-                    var thresholdRatio = 0.9
-                    var new_odds = {
-                      odd: moreRunners.get(key),
-                      back: runner.exchange.availableToBack[0].price,
-                      lay: runner.exchange.availableToLay[0].price,
-                      displayName: displayNames.get(moreRunners.get(key)),
-                      isValid: true
-                    }
-                    if (ratio <= thresholdRatio) {
-                      new_odds.isValid = false
-                    }
-                    bfOdds.push(new_odds)
-                  } catch {
-                    //console.log("Problem with: ", eventName, " - ", moreRunners.get(key))
-                  }
-                }
-              }
-            })
+            }
           })
           var combined_odds = []
-          for (var key of displayNames.keys()) {
-            var nPresented = 0
-            var iddaaIndex = 0
-            var bfIndex = 0
-            var n = -1
-            allOdds.forEach(iddaaOdd => {
-              n = n + 1
-              if (displayNames.get(key) == iddaaOdd.displayName) {
-                nPresented = nPresented + 1
-                iddaaIndex = n
-              }
-            })
-            n = -1
-            bfOdds.forEach(bfOdd => {
-              n = n + 1
-              if (key == bfOdd.odd) {
-                nPresented = nPresented + 1
-                bfIndex = n
-              }
-            })
-            if (nPresented == 2) {
+             bfOdds.forEach(bfOdd => {
+              var iddaaOdd = allOdds.find(iddaaOdd => iddaaOdd.displayName === bfOdd.displayName)
+              if (typeof iddaaOdd != 'undefined') {
+
+            
               var combined_record = {
-                eventId: allOdds[iddaaIndex].IddaaId,
-                oddId: allOdds[iddaaIndex].IddaaId.toString() + displayNames.get(key),
+                eventId: iddaaOdd.IddaaId,
+                oddId: iddaaOdd.IddaaId.toString() + iddaaOdd.displayName,
                 playingTeams: eventName,
-                playingTeamsIddaa: allOdds[iddaaIndex].playingTeamsIddaa,
-                displayName: displayNames.get(key),
-                iddaaOdd: allOdds[iddaaIndex].odd,
-                betfairBack: bfOdds[bfIndex].back,
-                betfairLay: bfOdds[bfIndex].lay,
-                betfairAverage: Math.floor(1000 * ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2)) / 1000,
-                ratio: Math.floor(1000 * (allOdds[iddaaIndex].odd / ((bfOdds[bfIndex].back + bfOdds[bfIndex].lay) / 2))) / 1000,
-                isValid: bfOdds[bfIndex].isValid
+                playingTeamsIddaa: iddaaOdd.playingTeamsIddaa,
+                displayName: iddaaOdd.displayName,
+                iddaaOdd: iddaaOdd.odd,
+                betfairBack: bfOdd.back,
+                betfairLay: bfOdd.lay,
+                betfairAverage: Math.floor(1000 * ((bfOdd.back + bfOdd.lay) / 2)) / 1000,
+                ratio: Math.floor(1000 * (iddaaOdd.odd / ((bfOdd.back + bfOdd.lay) / 2))) / 1000,
+                isValid: bfOdd.isValid
               }
               combined_odds.push(combined_record)
               // Updating or removing the record for the Summary section
@@ -481,7 +409,7 @@ const scrapeAPI = async (q) => {
                 }
               }
             }
-          }
+            })
           const savedEvents = await EventID.find()
           let bFound = false
           savedEvents.forEach(savedEvent => {
