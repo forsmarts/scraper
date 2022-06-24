@@ -27,10 +27,7 @@ html
         $("#summary").load("/summary", () => setTimeout(() => showSummary(), 5000));
       }
       setTimeout(() => showSummary(), 6000);
-      //showSummary();
-      //setInterval(() => showSummary(),5000);
       setTimeout(() => scrapeAll(), 2000);
-      //setInterval(() => scrapeAll(),60000);
 
   body
     button(type="button" class= 'scrapeall' onclick="scrapeAll()") Scrape All

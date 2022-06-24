@@ -91,13 +91,13 @@ async function scrapeIddaa() {
               }
             }
             var playingTeamsIddaa = eventResponse.en.split(" - ")
-            playingTeamsIddaa.forEach (playingTeamIddaa => {
+            playingTeamsIddaa.forEach(playingTeamIddaa => {
               var teamDoc = teams.find(team => team.iddaaName === playingTeamIddaa)
               if (typeof teamDoc == 'undefined') {
                 if (unknownTeams.indexOf(playingTeamIddaa) == -1) {
                   unknownTeams.push(playingTeamIddaa)
                 }
-              }  
+              }
             })
             if (leagueFilter == leagueID || leagueFilter == -1) {
               var savedMatch = savedMatches.find(savedMatch => savedMatch.iddaaID === eventResponse.eid)
@@ -111,7 +111,7 @@ async function scrapeIddaa() {
                 link: '',
                 isLive: isLive
               }
-              if(typeof savedMatch == 'undefined') {
+              if (typeof savedMatch == 'undefined') {
                 if (mentionedLeagues.indexOf(new_event.leagueId) == -1) {
                   mentionedLeagues.push(new_event.leagueId)
                 }
@@ -186,16 +186,16 @@ async function scrapeIddaa() {
         })
       })
       .catch(err => console.log(err))
-      var oneNewStartTime = new Date().getTime()
-      var performanceRecord = 
-        {
-          league: mentionedLeague,
-          leagueSize: leagueSize,
-          spentTime: (oneNewStartTime - newStartTime) / 1000
-        }
-      console.log("performanceRecord: ", performanceRecord)
-      betfairTime.push(performanceRecord)
-      newStartTime = oneNewStartTime
+    var oneNewStartTime = new Date().getTime()
+    var performanceRecord =
+    {
+      league: mentionedLeague,
+      leagueSize: leagueSize,
+      spentTime: (oneNewStartTime - newStartTime) / 1000
+    }
+    console.log("performanceRecord: ", performanceRecord)
+    betfairTime.push(performanceRecord)
+    newStartTime = oneNewStartTime
   }
   const data = IddaaEvents
 
@@ -234,35 +234,36 @@ const scrapeAPI = async (q) => {
           liveId = allOddsForEvent.data.data.event.bid
           var allMarkets = allOddsForEvent.data.data.event.m
           playingTeamsIddaa = allOddsForEvent.data.data.event.en
-            marketsRunnersDisplays.forEach(market => {
-              var marketIddaa = allMarkets.find(m => m.mn === market.marketNameIddaa)
-              if (typeof marketIddaa != 'undefined') {
-                  var n = -1
-                  market.oddNames.forEach(oddName => {
-                    n = n + 1
-                    var odd = marketIddaa.o.find(o => o.ona === oddName)
-                    if (typeof odd != 'undefined') {
-                      if (odd.odd > 1) {
-                        allOdds.push({
-                          IddaaId: q.id,
-                          playingTeamsIddaa: playingTeamsIddaa,
-                          marketName: market.marketNameIddaa,
-                          oddName: odd.ona,
-                          displayName: market.displayName[n],
-                          odd: odd.odd
-                        })
-                      }
-                    }
+          marketsRunnersDisplays.forEach(market => {
+            var marketIddaa = allMarkets.find(m => m.mn === market.marketNameIddaa)
+            if (typeof marketIddaa != 'undefined') {
+              var n = -1
+              market.oddNames.forEach(oddName => {
+                n = n + 1
+                var odd = marketIddaa.o.find(o => o.ona === oddName)
+                if (typeof odd != 'undefined') {
+                  //if (odd.odd > 1) {
+                  allOdds.push({
+                    IddaaId: q.id,
+                    playingTeamsIddaa: playingTeamsIddaa,
+                    marketName: market.marketNameIddaa,
+                    oddName: odd.ona,
+                    displayName: market.displayName[n],
+                    odd: odd.odd
                   })
-              }
-            })
+                  //}
+                }
+              })
+            }
+          })
         } else {
-          isOver = true          
+          isOver = true
         }
       })
       .catch(err => console.log(playingTeamsIddaa, err))
-          if (isOver) {
+    if (isOver) {
       summaryGreens = summaryGreens.filter((summaryGreen) => {
+        console.log("Removed green for: ", summaryGreen.oddId, " - game is over")
         return summaryGreen.eventId != q.id
       })
       return { combined_odds: '', message: 'The game is over' }
@@ -291,8 +292,8 @@ const scrapeAPI = async (q) => {
               matchTime = minute.toString()
               if (injurytime > 0) {
                 matchTime = matchTime + " + " + injurytime.toString() + "'"
-              }  
-            }  
+              }
+            }
           } catch {
             console.log("Error in matchData: ", err)
           }
@@ -304,22 +305,21 @@ const scrapeAPI = async (q) => {
         'https://ero.betfair.com/www/sports/exchange/readonly/v1/byevent?eventIds=' + q.bf + '&types=EVENT,MARKET_DESCRIPTION',
         headersBetfair
       )
-      var eventName
-      try {
+      if (marketIDsData.data.eventTypes.length > 0) {
         var eventName = marketIDsData.data.eventTypes[0].eventNodes[0].event.eventName
         const playingTeams = eventName.split(" v ")
         var marketNodes = marketIDsData.data.eventTypes[0].eventNodes[0].marketNodes
         var marketIDs = []
         marketsRunnersDisplays.forEach(market => {
           var marketName = market.marketNameBF
-            var marketNode = marketNodes.find(node => node.description.marketName === marketName)
-            if (typeof marketNode != 'undefined') {
-              var new_market = {
-                marketName: marketName,
-                marketID: marketNode.marketId
-              }
-              marketIDs.push(new_market)
+          var marketNode = marketNodes.find(node => node.description.marketName === marketName)
+          if (typeof marketNode != 'undefined') {
+            var new_market = {
+              marketName: marketName,
+              marketID: marketNode.marketId
             }
+            marketIDs.push(new_market)
+          }
         })
         var MarketIDs = ""
         marketIDs.forEach(marketID => {
@@ -334,6 +334,7 @@ const scrapeAPI = async (q) => {
             marketPriceURL,
             headersBetfair
           )
+          //console.log(marketPriceURL)
           var marketNodes = marketPriceData.data.eventTypes[0].eventNodes[0].marketNodes
           var moreRunners = []
           moreRunners.push(playingTeams[0])
@@ -343,10 +344,10 @@ const scrapeAPI = async (q) => {
           marketIDs.forEach(marketID => {
             var marketNode = marketNodes.find(node => node.marketId === marketID.marketID)
             var market = marketsRunnersDisplays.find(market => market.marketNameBF === marketID.marketName)
-            if(typeof marketNode != 'undefined') {
-              var n=-1
+            if (typeof marketNode != 'undefined') {
+              var n = -1
               market.runners.forEach(runnerName => {
-                n = n+1
+                n = n + 1
                 var runner = marketNode.runners.find(runner => runner.description.runnerName === runnerName)
                 if (typeof runner != 'undefined') {
                   try {
@@ -374,11 +375,11 @@ const scrapeAPI = async (q) => {
             }
           })
           var combined_odds = []
-             bfOdds.forEach(bfOdd => {
-              var iddaaOdd = allOdds.find(iddaaOdd => iddaaOdd.displayName === bfOdd.displayName)
-              if (typeof iddaaOdd != 'undefined') {
-
-            
+          //console.log("allOdds: ", allOdds)
+          //console.log("bfOdds: ", bfOdds)
+          bfOdds.forEach(bfOdd => {
+            var iddaaOdd = allOdds.find(iddaaOdd => iddaaOdd.displayName === bfOdd.displayName)
+            if (typeof iddaaOdd != 'undefined') {
               var combined_record = {
                 eventId: iddaaOdd.IddaaId,
                 oddId: iddaaOdd.IddaaId.toString() + iddaaOdd.displayName,
@@ -392,6 +393,11 @@ const scrapeAPI = async (q) => {
                 ratio: Math.floor(1000 * (iddaaOdd.odd / ((bfOdd.back + bfOdd.lay) / 2))) / 1000,
                 isValid: bfOdd.isValid
               }
+              if (combined_record.iddaaOdd == 1) {
+                combined_record.iddaaOdd = '-'
+                combined_record.ratio = '-'
+                combined_record.isValid = false
+              }
               combined_odds.push(combined_record)
               // Updating or removing the record for the Summary section
               var thisGreenIndex = summaryGreens.findIndex((summaryGreen) => {
@@ -399,17 +405,32 @@ const scrapeAPI = async (q) => {
               })
               if (thisGreenIndex > -1) {
                 if (combined_record.ratio > greenRatio && combined_record.isValid) {
+                  console.log("Updated green for: ", combined_record.oddId)
                   summaryGreens[thisGreenIndex] = combined_record
                 } else {
+                  console.log("Removed green for: ", combined_record.oddId, " - no longer green")
                   summaryGreens.splice(thisGreenIndex, 1)
                 }
               } else {
                 if (combined_record.ratio > greenRatio && combined_record.isValid) {
+                  console.log("Added green for: ", combined_record.oddId)
                   summaryGreens.push(combined_record)
                 }
               }
             }
-            })
+          })
+          var summaryEvent = summaryGreens.filter((summaryGreen) => {
+            return summaryGreen.eventId == q.id
+          })
+          summaryEvent.forEach(sEvent => {
+            var greenOdd = combined_odds.find(odd => odd.oddId === sEvent.oddId)
+            if (typeof greenOdd == 'undefined') {
+              summaryGreens = summaryGreens.filter((summaryGreen) => {
+                console.log("Removed green for: ", sEvent.oddId, " - no such odd")
+                return summaryGreen.oddId != sEvent.oddId
+              })
+            }
+          })
           const savedEvents = await EventID.find()
           let bFound = false
           savedEvents.forEach(savedEvent => {
@@ -444,22 +465,27 @@ const scrapeAPI = async (q) => {
                 console.log("New record creation failed: ", err)
               })
           }
-          const scrapedData = { isLive: q.isLive, matchResult: matchResult, matchTime: matchTime, combined_odds: combined_odds, message: '' }
+          //console.log("combined_odds: ", combined_odds.length)
+          const scrapedData = { 
+            isLive: q.isLive, 
+            matchResult: matchResult, 
+            matchTime: matchTime, 
+            combined_odds: combined_odds, 
+            message: ''
+          }
           return scrapedData
         } catch (err) {
-          console.log(err)
-          return { combined_odds: '', message: 'Unknown error'+q.id }
+          console.log("Get marketIDsData error (L0):", err)
+          return { combined_odds: '', message: 'Unknown error' + q.id }
         }
-      } catch (err) {
-        console.log("Get marketIDsData error (L2): ", err)
-        return { combined_odds: '', message: 'Unknown error'+q.id }
       }
-    } catch (err) { 
+    } catch (err) {
       console.log("Get marketIDsData error (L1):", err)
-      return { combined_odds: '', message: 'Unknown error'+q.id }
+      return { combined_odds: '', message: 'Unknown error' + q.id }
     }
   } else {
-    return { combined_odds: '', message: ''}
+    console.log("Empty q.id")
+    return { combined_odds: '', message: '' }
   }
 }
 

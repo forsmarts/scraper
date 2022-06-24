@@ -1,10 +1,16 @@
 - const aliases = data.aliases
 - const message = data.message
+- const nTeams = data.nTeam
+- const iddaaName = data.iddaaName 
 
 if message != ''
-  p #{message}
+  h2 #{message}
 else
   div(id = 'mapped-team')
-    //p Aliases: 
+    - nAlias = -1
     each alias in aliases
-      h2 #{alias}
+      - nAlias = nAlias + 1
+      div(id = 'mapped-team-'+nTeams onclick="$('#remove-alias-"+nTeams+'-'+nAlias+"').toggle()")
+        h2 #{alias}
+        div(id = 'remove-alias-'+nTeams+'-'+nAlias hidden)
+          button(type="button" class='btn-map-league' onclick="removeTeamAlias(" + nTeams + ",'" + iddaaName + "'," + nAlias + ")") Remove alias

@@ -1,8 +1,19 @@
 - const mapData = data.mapData
 - const message = data.message
+- const nLeagues = data.nLeagues
+- const iddaaName = data.iddaaName
 
 if message != ''
   p #{message}
 else
-  div(id = 'mapped-league')
+  - if (mapData[0] != ''){
+  div(id = 'mapped-league-'+nLeagues onclick="$('#remove-mapping-"+nLeagues+"').toggle()")
     h2 Betfair: #{mapData[0]} / #{mapData[1]}
+    div(id = 'remove-mapping-'+nLeagues hidden)
+      button(type="button" class='btn-map-league' onclick="removeBetfairLeagueMapping(" + nLeagues + ",'" + iddaaName + "')") Remove mapping
+  - } else {
+  div(id = 'not-mapped-league-'+nLeagues)
+    input(id = 'input-betfair-league-name-' + nLeagues title = 'Enter Betfair league name')
+    input(id = 'input-betfair-league-id-' + nLeagues title = 'Enter Betfair league ID')
+    button(type="button" class='btn-map-league' onclick="mapBetfairLeague(" + nLeagues + ",'" + iddaaName + "')") Map Betfair league
+  - }

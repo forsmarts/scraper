@@ -12,30 +12,54 @@ async function getAdmin() {
 const mapLeague = async (q) => {
     var message = ''
     var mapData = []
-    try {
-        mapData.push(q.bfn)
-        mapData.push(q.bfid)
-        await LeagueID.updateOne({iddaaName: q.iddaa}, {$set:{betfairName: q.bfn, betfairId: q.bfid}})    
-    } catch {
-        message = "Something went wrong in mapLeague function"
+    if (q.rm != 'true') {
+        try {
+            mapData.push(q.bfn)
+            mapData.push(q.bfid)
+            await LeagueID.updateOne({iddaaName: q.iddaa}, {$set:{betfairName: q.bfn, betfairId: q.bfid}})    
+        } catch {
+            message = "Something went wrong in mapLeague function"
+        }
+    } else {
+        try {
+            mapData.push('')
+            mapData.push(0)
+            await LeagueID.updateOne({iddaaName: q.iddaa}, {$set:{betfairName: '', betfairId: 0}})   
+        } catch {
+            message = "Something went wrong in mapLeague function"
+        }
     }
-    var data = {mapData: mapData, message: message}
-    return data
+    var data = {iddaaName: q.iddaa, nLeagues: q.nLeague, mapData: mapData, message: message} 
+    return data   
 }
 
 const mapTeam = async (q) => {
     var message = ''
     var aliases
-    try {
-        var team = await TeamID.findOne({iddaaName: q.iddaa})
-        aliases = team.aliases
-        console.log(aliases)
-        aliases.push(q.alias)
-        await TeamID.updateOne({iddaaName: q.iddaa}, {$set:{aliases: aliases}})    
-    } catch {
-        message = "Something went wrong in mapTeam function"
+    if (q.rm != 'true') {
+        try {
+            var team = await TeamID.findOne({iddaaName: q.iddaa})
+            aliases = team.aliases
+            //console.log(aliases)
+            aliases.push(q.alias)
+            await TeamID.updateOne({iddaaName: q.iddaa}, {$set:{aliases: aliases}})    
+        } catch {
+            message = "Something went wrong in mapTeam function"
+        }    
+    } else {
+        try {
+            var team = await TeamID.findOne({iddaaName: q.iddaa})
+            aliases = team.aliases
+            //console.log("Before: ", aliases)
+            //aliases.push(q.alias)
+            aliases.splice(q.nAlias,1)
+            //console.log("After: ", aliases)
+            await TeamID.updateOne({iddaaName: q.iddaa}, {$set:{aliases: aliases}})            
+        } catch {
+            message = "Something went wrong in mapTeam function"
+        }    
     }
-    var data = {aliases: aliases, message: message}
+    var data = {iddaaName: q.iddaa, nTeam: q.nTeam, aliases: aliases, message: message}
     return data
 }
 // async function getTeams() {
