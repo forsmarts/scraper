@@ -1,48 +1,13 @@
-html
-  head
-    title Odds comparison
-    link(href="style.css" rel="stylesheet" type="text/css")
-    script(src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous")
-    script.
-      function scrapeInput(eventID) {
-        var value = $("#input-match-"+eventID).val();
-        if (value != "") {
-          $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+value);
-        }
-      }
-      function scrapeLink(eventID,betfairID,isLive) {
-        if (isLive) {
-          $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID+"&isLive="+isLive, () => setTimeout(() => scrapeLink(eventID,betfairID,isLive), 15000));
-        } else {
-          $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID+"&isLive="+isLive, () => setTimeout(() => scrapeLink(eventID,betfairID,isLive), 60000));
-        }
-      }
-      function scrapeAll() {
-        $("button.btn-match").click();
-      }
-      function deleteFromDB(eventID) {
-        $("#buttons-match-"+eventID).load("/delete?iddaaID=" + eventID);
-      }
-      function showSummary() {
-        $("#summary").load("/summary", () => setTimeout(() => showSummary(), 5000));
-      }
-      setTimeout(() => showSummary(), 6000);
-      setTimeout(() => scrapeAll(), 2000);
-
-  body
-    button(type="button" class= 'scrapeall' onclick="scrapeAll()") Scrape All
-    div(id = 'summary')
-    for event in data.iddaa
-      h3(title = event.league) #{event.mbs} | #{event.playingTeams} 
-        //- if event.bfurl != ''
-        //-   a(href = event.bfurl target = "_blank")
-        //-     img(src="betfair-logo-sm-15.png") 
-      h2= event.date
-      div(id = 'data-match-' + event.eventID)
-      div(id = 'buttons-match-' + event.eventID)
-        if event.link == ''
-          input(id = 'input-match-' + event.eventID title = 'Enter Betfair ID')
-          button(type="button" class = 'btn-match' onclick="scrapeInput(" + event.eventID + ")") Scrape 
-        else
-          button(type="button" class = 'btn-match' onclick="scrapeLink(" + event.eventID + "," + event.betfairEventID + "," + event.isLive + ")") Scrape
-          button(type="button" class = 'btn-delete' onclick="deleteFromDB(" + event.eventID + ")") Delete link
+button(type="button" class= 'scrapeall' onclick="scrapeAll()") Scrape All
+div(id = 'summary')
+for event in data.iddaa
+  h3(title = event.league) #{event.mbs} | #{event.playingTeams} 
+  h2= event.date
+  div(id = 'data-match-' + event.eventID)
+  div(id = 'buttons-match-' + event.eventID)
+    if event.link == ''
+      input(id = 'input-match-' + event.eventID title = 'Enter Betfair ID')
+      button(type="button" class = 'btn-match' onclick="scrapeInput(" + event.eventID + ")") Scrape 
+    else
+      button(type="button" class = 'btn-match' onclick="scrapeLink(" + event.eventID + "," + event.betfairEventID + "," + event.isLive + ")") Scrape
+      button(type="button" class = 'btn-delete' onclick="deleteFromDB(" + event.eventID + ")") Delete link

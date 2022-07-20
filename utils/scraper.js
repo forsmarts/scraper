@@ -115,10 +115,20 @@ async function scrapeIddaa() {
                 if (mentionedLeagues.indexOf(new_event.leagueId) == -1) {
                   mentionedLeagues.push(new_event.leagueId)
                 }
+                const newEvent = new EventID({
+                  iddaaID: eventResponse.eid,
+                  leagueId: leagueID,
+                  date: eventResponse.e
+                })
+                newEvent.save()
+            
               } else {
                 new_event.eventID = savedMatch.iddaaID
-                new_event.link = savedMatch.link
+                new_event.link = (typeof savedMatch.link != 'undefined') ? savedMatch.link : ''
                 new_event.betfairEventID = savedMatch.betfairID
+
+                savedMatch.date = eventResponse.e
+                savedMatch.save()
               }
               IddaaEvents.push(new_event)
             }
@@ -149,6 +159,7 @@ async function scrapeIddaa() {
   var unknownNewTime = new Date().getTime()
   console.log("Unknown leagues/teams processed: ", (unknownNewTime - iddaaNewTime) / 1000, " sec")
   var newStartTime = new Date().getTime()
+
   var betfairTime = []
   var leagueSize
   // Get all Betfair maket data
@@ -198,7 +209,6 @@ async function scrapeIddaa() {
     newStartTime = oneNewStartTime
   }
   const data = IddaaEvents
-
   console.log("Betfair data loaded: ", (new Date().getTime() - startTime) / 1000, " sec")
   var totalLoadTime = (new Date().getTime() - startTime) / 1000
 
@@ -210,7 +220,6 @@ async function scrapeIddaa() {
     betfair: betfairTime
   })
   newPerformanceLog.save()
-
   return data
 }
 
@@ -263,7 +272,7 @@ const scrapeAPI = async (q) => {
       .catch(err => console.log(playingTeamsIddaa, err))
     if (isOver) {
       summaryGreens = summaryGreens.filter((summaryGreen) => {
-        console.log("Removed green for: ", summaryGreen.oddId, " - game is over")
+        //console.log("Removed green for: ", summaryGreen.oddId, " - game is over")
         return summaryGreen.eventId != q.id
       })
       return { combined_odds: '', message: 'The game is over' }
@@ -405,15 +414,15 @@ const scrapeAPI = async (q) => {
               })
               if (thisGreenIndex > -1) {
                 if (combined_record.ratio > greenRatio && combined_record.isValid) {
-                  console.log("Updated green for: ", combined_record.oddId)
+                  //console.log("Updated green for: ", combined_record.oddId)
                   summaryGreens[thisGreenIndex] = combined_record
                 } else {
-                  console.log("Removed green for: ", combined_record.oddId, " - no longer green")
+                  //console.log("Removed green for: ", combined_record.oddId, " - no longer green")
                   summaryGreens.splice(thisGreenIndex, 1)
                 }
               } else {
                 if (combined_record.ratio > greenRatio && combined_record.isValid) {
-                  console.log("Added green for: ", combined_record.oddId)
+                  //console.log("Added green for: ", combined_record.oddId)
                   summaryGreens.push(combined_record)
                 }
               }
@@ -426,7 +435,7 @@ const scrapeAPI = async (q) => {
             var greenOdd = combined_odds.find(odd => odd.oddId === sEvent.oddId)
             if (typeof greenOdd == 'undefined') {
               summaryGreens = summaryGreens.filter((summaryGreen) => {
-                console.log("Removed green for: ", sEvent.oddId, " - no such odd")
+                //console.log("Removed green for: ", sEvent.oddId, " - no such odd")
                 return summaryGreen.oddId != sEvent.oddId
               })
             }
@@ -476,12 +485,12 @@ const scrapeAPI = async (q) => {
           return scrapedData
         } catch (err) {
           console.log("Get marketIDsData error (L0):", err)
-          return { combined_odds: '', message: 'Unknown error' + q.id }
+          return { combined_odds: '', message: 'Unknown error ' + q.id }
         }
       }
     } catch (err) {
       console.log("Get marketIDsData error (L1):", err)
-      return { combined_odds: '', message: 'Unknown error' + q.id }
+      return { combined_odds: '', message: 'Unknown error ' + q.id }
     }
   } else {
     console.log("Empty q.id")

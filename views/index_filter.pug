@@ -1,0 +1,27 @@
+html
+  head
+    title Odds comparison
+    link(href="style.css" rel="stylesheet" type="text/css")
+    script(src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous")
+    script.
+      function showMatches(league) {
+        if ($("#btn-league"+league).attr('class')=='btn-league-not-selected') {
+          $("#div-league-"+league).show()
+          $("#div-league-"+league).load("/main?league="+league)
+          $("#btn-league"+league).attr('class', 'btn-league-selected')
+        } else {
+          $("#div-league-"+league).hide()
+          $("#btn-league"+league).attr('class', 'btn-league-not-selected')
+        }
+      }
+
+  body
+    button(type="button" class= 'scrapeall' onclick="scrapeAll()") Scrape All
+    div(id='filter')
+      h1 Leagues
+      div(id='buttons-leagues')
+        for league in data.filters.leagueNames
+          button(type="button" id='btn-league'+league class = 'btn-league-not-selected' onclick="showMatches('"+league+"')")= league
+      div(id='div-leagues')
+        for league in data.filters.leagueNames
+          div(id="div-league-"+league)

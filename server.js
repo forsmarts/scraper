@@ -8,6 +8,10 @@ app.use(express.static('css'))
 app.set('view engine', 'pug')
 
 app.get(['/','/main'], (req, res) => {
+  res.render('index')
+})
+
+app.get(['/events'], (req, res) => {
   const iddaaCoefficients = new Promise((resolve, reject) => {
     scraper
       .scrapeIddaa(req.query)

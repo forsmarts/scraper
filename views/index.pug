@@ -4,24 +4,33 @@ html
     link(href="style.css" rel="stylesheet" type="text/css")
     script(src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous")
     script.
-      function showMatches(league) {
-        if ($("#btn-league"+league).attr('class')=='btn-league-not-selected') {
-          $("#div-league-"+league).show()
-          $("#div-league-"+league).load("/main?league="+league)
-          $("#btn-league"+league).attr('class', 'btn-league-selected')
-        } else {
-          $("#div-league-"+league).hide()
-          $("#btn-league"+league).attr('class', 'btn-league-not-selected')
+      function scrapeInput(eventID) {
+        var value = $("#input-match-"+eventID).val();
+        if (value != "") {
+          $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+value);
         }
       }
+      function scrapeLink(eventID,betfairID,isLive) {
+        var timeoutLength = isLive ? 20000 : 90000
+        $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID+"&isLive="+isLive, () => setTimeout(() => scrapeLink(eventID,betfairID,isLive), timeoutLength));
+      }
+      function scrapeAll() {
+        $("button.btn-match").click();
+      }
+      function deleteFromDB(eventID) {
+        $("#buttons-match-"+eventID).load("/delete?iddaaID=" + eventID);
+      }
+      function showSummary() {
+        $("#summary").load("/summary", () => setTimeout(() => showSummary(), 5000));
+      }
+      function loadEvents() {
+        $("#main").load("/events", () => setTimeout(() => {
+          setTimeout(() => showSummary(), 6000);
+          setTimeout(() => scrapeAll(), 2000);
+        }));
+      }
+      setTimeout(() => loadEvents(), 500);
 
   body
-    button(type="button" class= 'scrapeall' onclick="scrapeAll()") Scrape All
-    div(id='filter')
-      h1 Leagues
-      div(id='buttons-leagues')
-        for league in data.filters.leagueNames
-          button(type="button" id='btn-league'+league class = 'btn-league-not-selected' onclick="showMatches('"+league+"')")= league
-      div(id='div-leagues')
-        for league in data.filters.leagueNames
-          div(id="div-league-"+league)
+    div(id = 'main')
+      p The page is loading
