@@ -11,11 +11,9 @@ html
         }
       }
       function scrapeLink(eventID,betfairID,isLive) {
-        if (isLive) {
-          $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID+"&isLive="+isLive, () => setTimeout(() => scrapeLink(eventID,betfairID,isLive), 15000));
-        } else {
-          $("#data-match-"+eventID).load("/api?id="+eventID+"&bf="+betfairID+"&isLive="+isLive, () => setTimeout(() => scrapeLink(eventID,betfairID,isLive), 60000));
-        }
+        var apiURL = "/api?id="+eventID+"&bf="+betfairID+"&isLive="+isLive;
+        var timeoutValue = isLive ? 20000 : 90000;
+        $("#data-match-"+eventID).load(apiURL, () => setTimeout(() => scrapeLink(eventID,betfairID,isLive), timeoutValue));
       }
       function scrapeAll() {
         $("button.btn-match").click();

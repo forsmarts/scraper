@@ -1,8 +1,10 @@
 - const allOdds = data.summary
 
+
 h3 Summary section
   table(class='odds')
     tr
+      th Date
       th Match 
       th Odd 
       th B 
@@ -12,6 +14,7 @@ h3 Summary section
       th R
     each odd in allOdds
       tr
+        td= odd.eventDate
         td= odd.playingTeamsIddaa
         td= odd.displayName
         td= odd.betfairBack

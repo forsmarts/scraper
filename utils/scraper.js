@@ -6,7 +6,7 @@ const PerformanceLog = require('../models/performanceLogs')
 var summaryGreens = []
 var greenRatio = 0.95
 
-var leagueFilter = -1
+var leagueFilter = 12351533
 
 var headersIddaa = {
   headers: {
@@ -116,6 +116,8 @@ async function scrapeIddaa() {
                   mentionedLeagues.push(new_event.leagueId)
                 }
               } else {
+                savedMatch.date = new_event.date
+                savedMatch.save()
                 new_event.eventID = savedMatch.iddaaID
                 new_event.link = savedMatch.link
                 new_event.betfairEventID = savedMatch.betfairID
@@ -242,16 +244,26 @@ const scrapeAPI = async (q) => {
                 n = n + 1
                 var odd = marketIddaa.o.find(o => o.ona === oddName)
                 if (typeof odd != 'undefined') {
-                  //if (odd.odd > 1) {
-                  allOdds.push({
-                    IddaaId: q.id,
-                    playingTeamsIddaa: playingTeamsIddaa,
-                    marketName: market.marketNameIddaa,
-                    oddName: odd.ona,
-                    displayName: market.displayName[n],
-                    odd: odd.odd
+                  var eventDate = null
+                  EventID.findOne({iddaaID: q.id}).then((savedEvent) => {
+                    if (typeof savedEvent != 'undefined') {
+                      console.log("savedEvent found: ", savedEvent)
+                      eventDate = savedEvent.date
+                      var theodd = {
+                        date: eventDate,
+                        IddaaId: q.id,
+                        playingTeamsIddaa: playingTeamsIddaa,
+                        marketName: market.marketNameIddaa,
+                        oddName: odd.ona,
+                        displayName: market.displayName[n],
+                        odd: odd.odd
+                      }
+                      console.log("theodd.date: ", theodd.date)
+                      allOdds.push(theodd)
+                    }
+                  }).catch((err) => {
+                    console.log ("Error occured while looking for the event ", q.id, ": ", err)
                   })
-                  //}
                 }
               })
             }
@@ -301,8 +313,9 @@ const scrapeAPI = async (q) => {
         .catch(err => console.log(playingTeamsIddaa, err))
     }
     try {
+      var marketIDsURL = 'https://ero.betfair.com/www/sports/exchange/readonly/v1/byevent?eventIds=' + q.bf + '&types=EVENT,MARKET_DESCRIPTION'
       marketIDsData = await axios.get(
-        'https://ero.betfair.com/www/sports/exchange/readonly/v1/byevent?eventIds=' + q.bf + '&types=EVENT,MARKET_DESCRIPTION',
+        marketIDsURL,
         headersBetfair
       )
       if (marketIDsData.data.eventTypes.length > 0) {
@@ -381,6 +394,7 @@ const scrapeAPI = async (q) => {
             var iddaaOdd = allOdds.find(iddaaOdd => iddaaOdd.displayName === bfOdd.displayName)
             if (typeof iddaaOdd != 'undefined') {
               var combined_record = {
+                eventDate: iddaaOdd.date,
                 eventId: iddaaOdd.IddaaId,
                 oddId: iddaaOdd.IddaaId.toString() + iddaaOdd.displayName,
                 playingTeams: eventName,
@@ -393,6 +407,7 @@ const scrapeAPI = async (q) => {
                 ratio: Math.floor(1000 * (iddaaOdd.odd / ((bfOdd.back + bfOdd.lay) / 2))) / 1000,
                 isValid: bfOdd.isValid
               }
+              //console.log("eventDate: ", combined_record.eventDate)
               if (combined_record.iddaaOdd == 1) {
                 combined_record.iddaaOdd = '-'
                 combined_record.ratio = '-'
@@ -431,25 +446,27 @@ const scrapeAPI = async (q) => {
               })
             }
           })
-          const savedEvents = await EventID.find()
-          let bFound = false
-          savedEvents.forEach(savedEvent => {
-            if (q.id == savedEvent.iddaaID) {
+          //const savedEvents = await EventID.find()
+          var bFound = false
+          await EventID.findOne({iddaaID: q.id}).then((savedEvent) => {
+            if (typeof savedEvent != 'undefined') {
               bFound = true
               if (q.bf != savedEvent.betfairID) {
                 savedEvent.betfairID = q.bf
                 savedEvent.link = "/api?id=" + q.id + "&bf=" + q.bf
                 savedEvent.playingTeamsBF = eventName
-                savedEvent.save()
-                  .then((result) => {
-                    //console.log("BetfairID is updated for match: ", q.id)
-                  })
-                  .catch((err) => {
-                    console.log("BetfairID update failed: ", err)
-                  })
-              }
-              return
+                savedEvent.save().then((result) => {
+                  //console.log("BetfairID is updated for match: ", q.id)
+                }).catch((err) => {
+                  console.log("BetfairID update failed: ", err)
+                })
+              }  
             }
+            //return
+            //}
+            //})  
+          }). catch((err) => {
+            console.log ("Error occured while looking for the event ", q.id, ": ", err)
           })
           if (!bFound) {
             const m = new EventID({
@@ -475,12 +492,14 @@ const scrapeAPI = async (q) => {
           }
           return scrapedData
         } catch (err) {
-          console.log("Get marketIDsData error (L0):", err)
+          console.log("Get marketIDsData error (L0): ", marketPriceURL)
+          //console.log("Get marketIDsData error (L0): ", err)
           return { combined_odds: '', message: 'Unknown error' + q.id }
         }
       }
     } catch (err) {
-      console.log("Get marketIDsData error (L1):", err)
+      //console.log("Get marketIDsData error (L1): ", err)
+      console.log("Get marketIDsData error (L1): ", marketIDsURL)
       return { combined_odds: '', message: 'Unknown error' + q.id }
     }
   } else {
@@ -490,6 +509,8 @@ const scrapeAPI = async (q) => {
 }
 
 async function getSummary() {
+  summaryGreens.sort((a, b) => a.date - b.date)
+  //console.log(summaryGreens)
   return summaryGreens
 }
 
